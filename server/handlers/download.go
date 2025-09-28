@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 	"os"
+	"path/filepath"
+	"my-portfolio/db"
 )
 
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -12,20 +14,24 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agreed := r.URL.Query().Get("agree")
-	if agreed != "true" {
-		http.Error(w, "harus menyetujui sebelum downlaod", http.StatusForbidden)
+	agree := r.URL.Query().Get("agree")
+	if agree != "true" {
+		http.Error(w, "Harus menyetujui syarat sebelum download", http.StatusForbidden)
 		return
 	}
-	
-	f, err := os.Open("uplods/ + file")
-	if err != nil {
-		http.Error(w, "File tidak di temukan", http.StatusNotFound)
-		return
-	}
-	defer f.Close()
 
-	w.Header().Set("Content-Dispotion", "attchment; filename" + file)
-	w.Header().Set("Contect-Type", "application/zip")
-	http.ServeFile(w, r, "uplods/" + file)
+	path := filepath.Join("uploads", file)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		http.Error(w, "File tidak ditemukan", http.StatusNotFound)
+		return
+	}
+
+	// Update download count
+	_, _ = db.DB.Exec("UPDATE project SET downloadCount = downloadCount + 1 WHERE fileUrl = ?", "/uploads/"+file)
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+file)
+	w.Header().Set("Content-Type", "application/zip")
+
+	http.ServeFile(w, r, path)
 }

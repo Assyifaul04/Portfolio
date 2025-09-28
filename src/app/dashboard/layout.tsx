@@ -2,6 +2,7 @@
 import Navbar from "@/components/layout/navbar";
 import Sidebar from "@/components/layout/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner"
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      <Toaster position="top-right" richColors />
     </ThemeProvider>
   );
 }
