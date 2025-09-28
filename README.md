@@ -27,7 +27,7 @@ Backend dengan **Golang**, database & storage menggunakan **Supabase**.
 
 ### 1. Clone Repo
 ```bash
-git clone https://github.com/username/my-portfolio.git
+git clone https://github.com/Assyifaul04/Portfolio.git
 cd my-portfolio
 
 2. Setup Backend (Golang)
