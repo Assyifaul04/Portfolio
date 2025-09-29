@@ -17,25 +17,24 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    if (!file) throw new Error("File tidak ada");
-
     const body = new FormData();
-    body.append("file", file);
+
+    body.append("file", formData.get("file") as Blob);
+    body.append("tags", (formData.get("tags") as string) || "React,Next.js");
+    body.append("description", (formData.get("description") as string) || "No description");
 
     const res = await fetch(`${API_URL}/upload`, {
       method: "POST",
       body,
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text);
-    }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json(); // {id, message, fileUrl}
 
-    const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+

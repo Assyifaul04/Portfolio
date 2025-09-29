@@ -32,6 +32,7 @@ func main() {
 	mux.HandleFunc("/upload", handlers.UploadHandler)
 	mux.HandleFunc("/download", handlers.DownloadHandler)
 	mux.HandleFunc("/list", handlers.ListHandler)
+	mux.HandleFunc("/project/", handlers.ProjectDetailHandler)
 
 	handler := enableCORS(mux)
 

@@ -8,30 +8,41 @@ import (
 )
 
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
-	file := r.URL.Query().Get("file")
-	if file == "" {
-		http.Error(w, "File tidak ada", http.StatusBadRequest)
-		return
-	}
+    id := r.URL.Query().Get("id")
+    if id == "" {
+        http.Error(w, "File tidak ada", http.StatusBadRequest)
+        return
+    }
 
-	agree := r.URL.Query().Get("agree")
-	if agree != "true" {
-		http.Error(w, "Harus menyetujui syarat sebelum download", http.StatusForbidden)
-		return
-	}
+    agree := r.URL.Query().Get("agree")
+    if agree != "true" {
+        http.Error(w, "Harus menyetujui syarat sebelum download", http.StatusForbidden)
+        return
+    }
 
-	path := filepath.Join("uploads", file)
+    // Ambil nama file dari database
+    var fileUrl string
+    err := db.DB.QueryRow("SELECT fileUrl FROM project WHERE id = ?", id).Scan(&fileUrl)
+    if err != nil {
+        http.Error(w, "File tidak ditemukan", http.StatusNotFound)
+        return
+    }
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		http.Error(w, "File tidak ditemukan", http.StatusNotFound)
-		return
-	}
+    // fileUrl = "/uploads/filename.zip" → ambil filename
+    filename := filepath.Base(fileUrl)
+    path := filepath.Join("uploads", filename)
 
-	// Update download count
-	_, _ = db.DB.Exec("UPDATE project SET downloadCount = downloadCount + 1 WHERE fileUrl = ?", "/uploads/"+file)
+    if _, err := os.Stat(path); os.IsNotExist(err) {
+        http.Error(w, "File tidak ditemukan", http.StatusNotFound)
+        return
+    }
 
-	w.Header().Set("Content-Disposition", "attachment; filename="+file)
-	w.Header().Set("Content-Type", "application/zip")
+    // Update download count
+    _, _ = db.DB.Exec("UPDATE project SET downloadCount = downloadCount + 1 WHERE id = ?", id)
 
-	http.ServeFile(w, r, path)
+    w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+    w.Header().Set("Content-Type", "application/zip")
+
+    http.ServeFile(w, r, path)
 }
+

@@ -11,7 +11,7 @@ import (
 var DB *sql.DB
 
 func Connect() {
-	// ganti user, password, dbname sesuai Laragon
+
 	user := "root"
 	password := ""
 	host := "127.0.0.1"
@@ -37,15 +37,15 @@ func Migrate() {
 	query := `
 	CREATE TABLE IF NOT EXISTS project (
 		id VARCHAR(36) PRIMARY KEY,
-		name VARCHAR(255),
+		name VARCHAR(255) NOT NULL,
 		description TEXT,
 		longDescription TEXT,
 		size BIGINT,
-		uploadDate DATETIME,
-		tags VARCHAR(255),
+		uploadDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+		tags VARCHAR(255), -- simpan JSON string: ["React","Next.js"]
 		downloadCount INT DEFAULT 0,
 		status VARCHAR(50) DEFAULT 'Processing',
-		fileUrl VARCHAR(255)
+		fileUrl VARCHAR(255) NOT NULL
 	);`
 
 	_, err := DB.Exec(query)

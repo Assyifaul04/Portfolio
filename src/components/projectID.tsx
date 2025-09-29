@@ -1,320 +1,257 @@
-// "use client";
-// import { Badge } from "@/components/ui/badge";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Download, ArrowLeft, Calendar, Star, Eye } from "lucide-react";
-// import { useEffect, useState } from "react";
-// import { toast } from "sonner";
-// import { useRouter, useParams } from "next/navigation";
+"use client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Calendar, 
+  FileText, 
+  Download, 
+  Instagram,
+  Play,
+  Music,
+  CheckCircle2,
+  Clock,
+  HardDrive,
+  TrendingDown,
+  AlertCircle,
+  ArrowLeft
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-// export default function ProjectID() {
-//   const [project, setProject] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [selectedFile, setSelectedFile] = useState(false);
-//   const router = useRouter();
-//   const params = useParams();
-//   const projectId = params.projectId;
+interface ProjectDetail {
+  id: string;
+  name: string;
+  size: number;
+  uploadDate: string;
+  description?: string;
+  tags?: string[];
+  downloadCount?: number;
+}
 
-//   // Status persyaratan social media
-//   const [requirements, setRequirements] = useState({
-//     instagram: false,
-//     tiktok: false,
-//     youtube: false,
-//   });
+export default function ProjectID() {
+  const { id } = useParams(); // ambil id dari url
+  const router = useRouter();
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
-//   const allCompleted = Object.values(requirements).every(Boolean);
+  const [requirements, setRequirements] = useState({
+    instagram: false,
+    tiktok: false,
+    youtube: false,
+  });
 
-//   useEffect(() => {
-//     // Simulasi fetch data project
-//     setTimeout(() => {
-//       const mockProject = {
-//         id: projectId,
-//         name: `Amazing Project ${projectId}`,
-//         description: "Proyek web modern dengan fitur lengkap dan desain responsif",
-//         longDescription: `Ini adalah proyek web yang dikembangkan dengan teknologi terdepan. 
-//         Proyek ini mencakup sistem autentikasi, dashboard admin, dan API RESTful. 
-//         Cocok untuk developer yang ingin mempelajari arsitektur web modern.`,
-//         size: 15672832, // 15.67 MB
-//         uploadDate: "2024-01-15",
-//         tags: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
-//         downloadCount: 1247,
-//         viewCount: 3891,
-//         rating: 4.8,
-//         author: "Developer Pro",
-//         version: "2.1.0",
-//         features: [
-//           "Sistem autentikasi JWT",
-//           "Dashboard admin lengkap",
-//           "UI/UX modern dan responsif", 
-//           "Optimasi performa tinggi",
-//           "SEO friendly",
-//           "Dark/Light mode"
-//         ],
-//         requirements: [
-//           "Node.js 18+",
-//           "npm atau yarn",
-//           "PostgreSQL 13+",
-//           "Git"
-//         ]
-//       };
-      
-//       setProject(mockProject);
-//       setLoading(false);
-//     }, 1000);
-//   }, [projectId]);
+  const allCompleted = Object.values(requirements).every(Boolean);
 
-//   const handleDownload = async () => {
-//     if (!project) return;
-    
-//     try {
-//       // Simulasi download
-//       toast.success("Download berhasil!");
-//       setRequirements({ instagram: false, tiktok: false, youtube: false });
-//       setSelectedFile(false);
-//     } catch (err) {
-//       toast.error("Gagal download: " + err.message);
-//     }
-//   };
+  useEffect(() => {
+    if (!id) return;
 
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-//           <p className="text-gray-600">Loading project...</p>
-//         </div>
-//       </div>
-//     );
-//   }
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/project/${id}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
+      .then((data) => {
+        const projectData: ProjectDetail = {
+          id: data.id,
+          name: data.name,
+          size: data.size,
+          uploadDate: data.uploadDate || new Date().toISOString(),
+          description: data.description || "Deskripsi belum tersedia.",
+          tags: data.tags || ["React", "Next.js", "TypeScript"],
+          downloadCount: data.downloadCount || 0,
+        };
+        setProject(projectData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        toast.error("Gagal ambil data: " + err.message);
+        setLoading(false);
+      });
+  }, [id]);
 
-//   if (!project) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <h2 className="text-2xl font-bold text-gray-800 mb-2">Proyek tidak ditemukan</h2>
-//           <Button onClick={() => router.back()} variant="outline">
-//             <ArrowLeft className="h-4 w-4 mr-2" />
-//             Kembali
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }
+  const handleDownload = async () => {
+    if (!project) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/download?id=${project.id}&agree=true`);
+      if (!res.ok) throw new Error(await res.text());
 
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <div className="bg-white shadow-sm border-b">
-//         <div className="max-w-4xl mx-auto px-4 py-4">
-//           <Button onClick={() => router.back()} variant="ghost">
-//             <ArrowLeft className="h-4 w-4 mr-2" />
-//             Kembali ke Proyek
-//           </Button>
-//         </div>
-//       </div>
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = project.name;
+      a.click();
+      window.URL.revokeObjectURL(url);
 
-//       <div className="max-w-4xl mx-auto px-4 py-8">
-//         {/* Project Header */}
-//         <Card className="mb-8">
-//           <CardHeader>
-//             <div className="flex flex-col md:flex-row gap-6">
-//               <div className="flex-1">
-//                 <h1 className="text-3xl font-bold text-gray-900 mb-4">{project.name}</h1>
-//                 <p className="text-lg text-gray-600 mb-4">{project.description}</p>
-                
-//                 {/* Tags */}
-//                 <div className="flex flex-wrap gap-2 mb-4">
-//                   {project.tags.map((tag, index) => (
-//                     <Badge key={index} className="bg-blue-100 text-blue-800">
-//                       {tag}
-//                     </Badge>
-//                   ))}
-//                 </div>
+      toast.success("Download berhasil");
+      setRequirements({ instagram: false, tiktok: false, youtube: false });
+    } catch (err: any) {
+      toast.error("Gagal download: " + err.message);
+    }
+  };
 
-//                 {/* Stats */}
-//                 <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-//                   <div className="flex items-center gap-2">
-//                     <Download className="h-4 w-4" />
-//                     <span>{project.downloadCount.toLocaleString()} downloads</span>
-//                   </div>
-//                   <div className="flex items-center gap-2">
-//                     <Eye className="h-4 w-4" />
-//                     <span>{project.viewCount.toLocaleString()} views</span>
-//                   </div>
-//                   <div className="flex items-center gap-2">
-//                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-//                     <span>{project.rating}/5</span>
-//                   </div>
-//                   <div className="flex items-center gap-2">
-//                     <Calendar className="h-4 w-4" />
-//                     <span>{new Date(project.uploadDate).toLocaleDateString("id-ID")}</span>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           </CardHeader>
-//         </Card>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-//         <div className="grid lg:grid-cols-3 gap-8">
-//           {/* Main Content */}
-//           <div className="lg:col-span-2 space-y-6">
-//             {/* Description */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Deskripsi</CardTitle>
-//               </CardHeader>
-//               <CardContent>
-//                 <p className="text-gray-700 leading-relaxed">{project.longDescription}</p>
-//               </CardContent>
-//             </Card>
+  if (loading) {
+    return (
+      <section className="max-w-3xl mx-auto px-4 py-20 bg-slate-50 dark:bg-slate-950">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+          <div className="h-40 bg-slate-200 dark:bg-slate-800 rounded"></div>
+        </div>
+      </section>
+    );
+  }
 
-//             {/* Features */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Fitur Utama</CardTitle>
-//               </CardHeader>
-//               <CardContent>
-//                 <div className="grid md:grid-cols-2 gap-3">
-//                   {project.features.map((feature, index) => (
-//                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-//                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-//                       <span className="text-sm">{feature}</span>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </CardContent>
-//             </Card>
+  if (!project) {
+    return (
+      <section className="max-w-3xl mx-auto px-4 py-20 text-center bg-slate-50 dark:bg-slate-950">
+        <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 w-fit mx-auto mb-4">
+          <AlertCircle className="h-16 w-16 text-slate-400 dark:text-slate-500" />
+        </div>
+        <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400">Proyek tidak ditemukan</h3>
+        <p className="text-slate-500 dark:text-slate-500 mt-2">ID proyek yang Anda cari tidak tersedia</p>
+      </section>
+    );
+  }
 
-//             {/* Installation */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Panduan Instalasi</CardTitle>
-//               </CardHeader>
-//               <CardContent>
-//                 <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm">
-//                   <div className="space-y-1">
-//                     <div># 1. Extract project</div>
-//                     <div>$ cd {project.name.toLowerCase().replace(/\s+/g, '-')}</div>
-//                     <div></div>
-//                     <div># 2. Install dependencies</div>
-//                     <div>$ npm install</div>
-//                     <div></div>
-//                     <div># 3. Run development server</div>
-//                     <div>$ npm run dev</div>
-//                   </div>
-//                 </div>
-//               </CardContent>
-//             </Card>
-//           </div>
+  return (
+    <section className="max-w-3xl mx-auto px-4 py-20 bg-slate-50 dark:bg-slate-950">
+      {/* Header dengan tombol kembali */}
+      <div className="mb-8 flex items-center gap-4">
+        <Button
+          onClick={() => router.back()}
+          variant="outline"
+          className="flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </Button>
+        <div className="h-6 w-px bg-slate-300 dark:bg-slate-700"></div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Detail Proyek</h1>
+      </div>
 
-//           {/* Sidebar */}
-//           <div className="space-y-6">
-//             {/* Download */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Download Project</CardTitle>
-//                 <p className="text-sm text-gray-600">
-//                   Ukuran: {(project.size / 1024 / 1024).toFixed(1)} MB
-//                 </p>
-//               </CardHeader>
-//               <CardContent className="space-y-4">
-//                 {!selectedFile ? (
-//                   <Button
-//                     onClick={() => setSelectedFile(true)}
-//                     className="w-full bg-green-600 hover:bg-green-700"
-//                   >
-//                     <Download className="h-4 w-4 mr-2" />
-//                     Download Sekarang
-//                   </Button>
-//                 ) : (
-//                   <div className="space-y-3">
-//                     <p className="text-sm font-medium text-center">Selesaikan persyaratan:</p>
-                    
-//                     {[
-//                       { key: 'instagram', url: 'https://instagram.com/username', label: '📸 Follow Instagram' },
-//                       { key: 'tiktok', url: 'https://tiktok.com/@username', label: '🎵 Follow TikTok' },
-//                       { key: 'youtube', url: 'https://youtube.com/channel/yourchannel', label: '🎬 Subscribe YouTube' }
-//                     ].map(({ key, url, label }) => (
-//                       <a
-//                         key={key}
-//                         href={url}
-//                         target="_blank"
-//                         rel="noopener noreferrer"
-//                         className={`
-//                           block w-full p-2 rounded text-center text-sm font-medium transition-colors
-//                           ${requirements[key] 
-//                             ? 'bg-green-100 text-green-800 border border-green-300' 
-//                             : 'bg-blue-500 text-white hover:bg-blue-600'
-//                           }
-//                         `}
-//                         onClick={() => setRequirements(prev => ({ ...prev, [key]: true }))}
-//                       >
-//                         {requirements[key] ? `✅ ${label}` : label}
-//                       </a>
-//                     ))}
+      <Card className="shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <CardHeader className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
+              <FileText className="h-8 w-8 text-slate-600 dark:text-slate-400" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-400 bg-clip-text text-transparent">
+                {project.name}
+              </CardTitle>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {project.tags?.map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="text-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardHeader>
 
-//                     <Button
-//                       onClick={handleDownload}
-//                       className={`w-full ${
-//                         allCompleted 
-//                           ? 'bg-green-600 hover:bg-green-700' 
-//                           : 'bg-gray-400 cursor-not-allowed'
-//                       }`}
-//                       disabled={!allCompleted}
-//                     >
-//                       {allCompleted ? "🚀 Download!" : "Selesaikan dulu"}
-//                     </Button>
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
+        <CardContent className="space-y-6">
+          <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
+            {project.description}
+          </p>
 
-//             {/* Project Info */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Informasi Project</CardTitle>
-//               </CardHeader>
-//               <CardContent className="space-y-3">
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Author:</span>
-//                   <span className="font-medium">{project.author}</span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Version:</span>
-//                   <span className="font-medium">{project.version}</span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Upload:</span>
-//                   <span className="font-medium">
-//                     {new Date(project.uploadDate).toLocaleDateString("id-ID")}
-//                   </span>
-//                 </div>
-//                 <div className="flex justify-between">
-//                   <span className="text-gray-600">Downloads:</span>
-//                   <span className="font-medium">{project.downloadCount.toLocaleString()}</span>
-//                 </div>
-//               </CardContent>
-//             </Card>
+          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+              <Calendar className="h-5 w-5" />
+              <span>{formatDate(project.uploadDate)}</span>
+            </div>
+            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1">
+                <HardDrive className="h-5 w-5" />
+                <span>{(project.size / 1024 / 1024).toFixed(1)} MB</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <TrendingDown className="h-5 w-5" />
+                <span>{project.downloadCount}</span>
+              </div>
+            </div>
+          </div>
 
-//             {/* Requirements */}
-//             <Card>
-//               <CardHeader>
-//                 <CardTitle>Persyaratan Sistem</CardTitle>
-//               </CardHeader>
-//               <CardContent>
-//                 <ul className="space-y-2">
-//                   {project.requirements.map((req, index) => (
-//                     <li key={index} className="flex items-center gap-2 text-sm">
-//                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-//                       <span>{req}</span>
-//                     </li>
-//                   ))}
-//                 </ul>
-//               </CardContent>
-//             </Card>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+          {/* Persyaratan Follow */}
+          <div className="mt-6 p-6 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 space-y-4">
+            <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center flex items-center justify-center gap-2">
+              <CheckCircle2 className="h-6 w-6" />
+              Selesaikan persyaratan berikut:
+            </h4>
+            <div className="space-y-3">
+              {[
+                { key: "instagram", url: "https://instagram.com/username", label: "Follow Instagram", icon: Instagram, color: "bg-pink-600 hover:bg-pink-700 dark:bg-pink-700 dark:hover:bg-pink-800" },
+                { key: "tiktok", url: "https://tiktok.com/@username", label: "Follow TikTok", icon: Music, color: "bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700" },
+                { key: "youtube", url: "https://youtube.com/channel/yourchannel", label: "Subscribe YouTube", icon: Play, color: "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800" },
+              ].map(({ key, url, label, icon: Icon, color }) => (
+                <a
+                  key={key}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`
+                    flex items-center justify-center gap-3 w-full p-4 rounded-lg text-center font-medium transition-all duration-300
+                    ${requirements[key as keyof typeof requirements] 
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700"
+                      : `${color} text-white hover:shadow-lg hover:scale-105`}
+                  `}
+                  onClick={() =>
+                    setRequirements((prev) => ({ ...prev, [key]: true }))
+                  }
+                >
+                  {requirements[key as keyof typeof requirements] ? (
+                    <>
+                      <CheckCircle2 className="h-5 w-5" />
+                      {label} - Selesai
+                    </>
+                  ) : (
+                    <>
+                      <Icon className="h-5 w-5" />
+                      {label}
+                    </>
+                  )}
+                </a>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleDownload}
+              className={`w-full font-bold py-4 text-lg rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                allCompleted
+                  ? "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white shadow-lg hover:shadow-xl"
+                  : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+              }`}
+              disabled={!allCompleted}
+            >
+              {allCompleted ? (
+                <>
+                  <Download className="h-5 w-5" />
+                  Download Sekarang!
+                </>
+              ) : (
+                <>
+                  <Clock className="h-5 w-5" />
+                  Selesaikan semua persyaratan
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
