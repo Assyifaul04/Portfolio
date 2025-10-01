@@ -1,8 +1,8 @@
-// app/layout.tsx (Updated)
-import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import "./globals.css";
+import Providers from "./providers";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground`}>
-        {children}
+        <Providers>{children}</Providers> {/* ← pakai wrapper client */}
         <Toaster position="top-right" richColors />
       </body>
     </html>
