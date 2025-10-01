@@ -33,7 +33,10 @@ interface ProjectFile {
   description?: string;
   tags?: string[];
   downloadCount?: number;
+  image_url?: string;
+  file_url?: string;
 }
+
 
 export default function Projects() {
   const [files, setFiles] = useState<ProjectFile[]>([]);
@@ -76,20 +79,22 @@ export default function Projects() {
   const allCompleted = Object.values(requirements).every(Boolean);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/list`)
+    fetch("/api/projects")
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
         return res.json();
       })
       .then((data) => {
-        const transformedData = data.map((file: any) => ({
-          id: file.id,
-          name: file.name,
-          size: file.size,
-          uploadDate: file.uploadDate,
-          description: file.description ?? "",
-          tags: file.tags ?? [],
-          downloadCount: file.downloadCount ?? 0,
+        const transformedData = data.map((project: any) => ({
+          id: project.id,
+          name: project.title,
+          size: project.file_url ? 1024 * 1024 * 5 : 0,
+          uploadDate: project.created_at,
+          description: project.description ?? "",
+          tags: project.tags ?? [],
+          downloadCount: project.downloadCount ?? 0,
+          image_url: project.image_url,
+          file_url: project.file_url,
         }));
         setFiles(transformedData);
         setLoading(false);
@@ -102,10 +107,11 @@ export default function Projects() {
 
   const handleDownload = async (fileId: string, filename: string) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/download?id=${fileId}&agree=true`
-      );
-      if (!res.ok) throw new Error(await res.text());
+      const project = files.find((f) => f.id === fileId);
+      if (!project?.file_url) throw new Error("File tidak tersedia");
+
+      const res = await fetch(project.file_url);
+      if (!res.ok) throw new Error("Gagal fetch file");
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -175,6 +181,13 @@ export default function Projects() {
             className="group hover:shadow-xl transition-all duration-300 border border-slate-200 dark:border-slate-800 shadow-md hover:-translate-y-2 bg-white dark:bg-slate-900 hover:shadow-slate-200 dark:hover:shadow-slate-800/25"
           >
             <CardHeader className="space-y-3">
+              {file.image_url && (
+                <img
+                  src={file.image_url}
+                  alt={file.name}
+                  className="w-full h-40 object-cover rounded-lg mb-3"
+                />
+              )}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors line-clamp-2">

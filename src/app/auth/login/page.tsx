@@ -6,9 +6,29 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    await signIn("google", { callbackUrl: "/auth/callback" });
+  const handleGoogleSignIn = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    // buka popup kecil
+    const popup = window.open(
+      "/api/auth/signin/google?callbackUrl=/auth/callback",
+      "googleLogin",
+      `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`
+    );
+
+    // listener untuk menerima pesan dari popup
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return; // keamanan
+      if (event.data === "auth-success") {
+        popup?.close();
+        window.location.href = "/auth/callback"; // atau refresh session manual
+      }
+    };
+
+    window.addEventListener("message", handleMessage, { once: true });
   };
 
   const handleEmailSignIn = () => {
@@ -59,7 +79,9 @@ export default function LoginPage() {
         {/* Separator */}
         <div className="flex items-center my-4">
           <span className="flex-grow h-px bg-slate-300 dark:bg-slate-700"></span>
-          <span className="px-2 text-slate-500 dark:text-slate-400 text-sm">ATAU</span>
+          <span className="px-2 text-slate-500 dark:text-slate-400 text-sm">
+            ATAU
+          </span>
           <span className="flex-grow h-px bg-slate-300 dark:bg-slate-700"></span>
         </div>
 

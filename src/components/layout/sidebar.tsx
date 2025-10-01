@@ -27,13 +27,8 @@ const navigation = [
     icon: Home,
   },
   {
-    name: "Analytics",
-    href: "/dashboard/analytics",
-    icon: BarChart3,
-  },
-  {
     name: "Projects",
-    href: "/dashboard/project",
+    href: "/dashboard/projects",
     icon: Folder,
   },
   {
@@ -44,11 +39,6 @@ const navigation = [
 ];
 
 const tools = [
-  {
-    name: "Code Editor",
-    href: "/dashboard/code-editor",
-    icon: Code,
-  },
   {
     name: "Database",
     href: "/dashboard/database",

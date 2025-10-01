@@ -8,12 +8,18 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Jika dibuka dalam popup (window.opener tersedia)
+    if (typeof window !== "undefined" && window.opener) {
+      window.opener.postMessage("auth-success", window.location.origin);
+      window.close();
+      return;
+    }
+
     if (status === "loading") return;
     if (!session) {
       router.push("/auth/login");
       return;
     }
-    // Redirect berdasarkan role
     if ((session.user as any).role === "admin") {
       router.push("/dashboard");
     } else {
@@ -35,7 +41,7 @@ export default function CallbackPage() {
               className="w-12 h-12 text-slate-700 dark:text-slate-300"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24"
+              viewBox="0 0 24 24" 
             >
               <path
                 strokeLinecap="round"
@@ -63,11 +69,11 @@ export default function CallbackPage() {
           </div>
 
           {/* Progress indicator */}
-          <div className="mt-8 flex justify-center space-x-2">
+          {/* <div className="mt-8 flex justify-center space-x-2">
             <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse"></div>
             <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse delay-75"></div>
             <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse delay-150"></div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

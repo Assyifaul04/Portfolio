@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/lib/supabaseClient";
+import Image from "next/image";
 
 interface UserProfile {
   id: string;
@@ -40,7 +41,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Ambil data user dari Supabase table 'users' berdasarkan email NextAuth
+  // Ambil data user dari Supabase
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!session?.user?.email) return;
@@ -84,7 +85,14 @@ export default function Navbar() {
               href="/"
               className="group flex items-center space-x-2 text-2xl font-bold text-slate-900 dark:text-slate-100"
             >
-              Syn_Taxx
+              <Image
+                src="/assets/logo.jpg"
+                alt="Logo"
+                width={45}
+                height={45}
+                className="rounded-full"
+              />
+              <span className="hidden sm:inline font-bold">Syn_Taxx</span>
             </Link>
 
             {/* Menu */}
@@ -106,7 +114,7 @@ export default function Navbar() {
               </NavigationMenuList>
             </NavigationMenu>
 
-            {/* Avatar with Username */}
+            {/* Avatar with Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -119,7 +127,9 @@ export default function Navbar() {
                     </span>
                     <Avatar className="h-9 w-9 ring-2 ring-slate-300 dark:ring-slate-700 transition-all duration-300">
                       <AvatarImage
-                        src={userProfile?.avatar_url || "/avatar-placeholder.png"}
+                        src={
+                          userProfile?.avatar_url || "/avatar-placeholder.png"
+                        }
                       />
                       <AvatarFallback className="bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
                         {userProfile?.name?.[0] || "ST"}
@@ -134,7 +144,10 @@ export default function Navbar() {
               >
                 {!userProfile ? (
                   <DropdownMenuItem asChild>
-                    <Link href="/auth/login" className="text-slate-700 dark:text-slate-300">
+                    <Link
+                      href="/auth/login"
+                      className="text-slate-700 dark:text-slate-300"
+                    >
                       Login
                     </Link>
                   </DropdownMenuItem>
@@ -148,12 +161,45 @@ export default function Navbar() {
                         {userProfile.email}
                       </p>
                     </div>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="text-slate-700 dark:text-slate-300">
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={handleLogout} className="text-red-600 dark:text-red-400">
+
+                    {/* Kalau admin muncul menu Dashboard & Settings */}
+                    {userProfile.role === "admin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/dashboard"
+                            className="text-slate-700 dark:text-slate-300"
+                          >
+                            Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/settings"
+                            className="text-slate-700 dark:text-slate-300"
+                          >
+                            Settings
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
+                    {/* Kalau user biasa tetap ada Riwayat */}
+                    {userProfile.role !== "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/riwayat"
+                          className="text-slate-700 dark:text-slate-300"
+                        >
+                          Riwayat download
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuItem
+                      onSelect={handleLogout}
+                      className="text-red-600 dark:text-red-400"
+                    >
                       Logout
                     </DropdownMenuItem>
                   </>

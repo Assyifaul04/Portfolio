@@ -1,56 +1,62 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = new SupabaseClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    })
+    }),
   ],
   callbacks: {
-    async signIn({ user }) {
-      const { email, name } = user;
+    async signIn({ user }: { user: any }) {
+      const { email, name, image } = user;
+      if (!email) return false;
 
-      // Cek apakah user sudah ada di DB
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("users")
-        .select("*")
+        .select("id")
         .eq("email", email)
         .single();
 
       if (!data) {
-        // Insert user baru default role = user
         await supabase.from("users").insert([
-          { email, name, role: "user" },
+          { email, name, avatar_url: image, role: "user" },
         ]);
+      } else {
+        await supabase
+          .from("users")
+          .update({ name, avatar_url: image })
+          .eq("email", email);
       }
 
       return true;
     },
-    async session({ session }) {
+    async session({ session }: { session: any }) {
       if (!session?.user?.email) return session;
 
-      // Ambil role user dari DB
       const { data } = await supabase
         .from("users")
-        .select("role")
+        .select("role, avatar_url, id")
         .eq("email", session.user.email)
         .single();
 
-      if (data?.role) {
+      if (data) {
         (session.user as any).role = data.role;
+        (session.user as any).id = data.id;
+        session.user.image = data.avatar_url;
       }
 
       return session;
     },
   },
-});
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
