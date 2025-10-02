@@ -1,5 +1,4 @@
 "use client";
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -7,24 +6,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
 
   const handleGoogleSignIn = () => {
+    setIsLoading(true);
+
     const width = 500;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
-    // buka popup kecil
     const popup = window.open(
       "/api/auth/signin/google?callbackUrl=/auth/callback",
       "googleLogin",
       `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`
     );
 
-    // listener untuk menerima pesan dari popup
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return; // keamanan
+      if (event.origin !== window.location.origin) return;
+
       if (event.data === "auth-success") {
+        setIsLoading(false);
         popup?.close();
-        window.location.href = "/auth/callback"; // atau refresh session manual
+        // refresh session atau redirect ke homepage
+        window.location.href = "/"; // bisa ganti router.push("/") jika pakai next/navigation
       }
     };
 
@@ -32,24 +34,20 @@ export default function LoginPage() {
   };
 
   const handleEmailSignIn = () => {
-    // Tetap menggunakan email seperti sebelumnya
     alert(`Login dengan email: ${email}`);
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 px-4">
-      {/* Judul */}
       <h1 className="text-4xl font-serif font-bold text-center text-slate-900 dark:text-slate-100">
-        Selamat Datang? <br />
+        Selamat Datang! <br />
         Di Profile Izza
       </h1>
       <p className="text-center text-slate-600 dark:text-slate-400 mt-2 mb-10">
-        silahkan login
+        Silahkan login
       </p>
 
-      {/* Card login */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-md p-8 border border-slate-200 dark:border-slate-800">
-        {/* Google Sign-In */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
@@ -76,7 +74,6 @@ export default function LoginPage() {
           {isLoading ? "Memuat..." : "Lanjutkan dengan Google"}
         </button>
 
-        {/* Separator */}
         <div className="flex items-center my-4">
           <span className="flex-grow h-px bg-slate-300 dark:bg-slate-700"></span>
           <span className="px-2 text-slate-500 dark:text-slate-400 text-sm">
@@ -85,7 +82,6 @@ export default function LoginPage() {
           <span className="flex-grow h-px bg-slate-300 dark:bg-slate-700"></span>
         </div>
 
-        {/* Email input */}
         <input
           type="email"
           placeholder="Masukkan email Anda"
@@ -100,7 +96,6 @@ export default function LoginPage() {
           Lanjutkan dengan email
         </button>
 
-        {/* Footer */}
         <p className="text-xs text-center text-slate-500 dark:text-slate-400 mt-4">
           Dengan melanjutkan, Anda mengakui{" "}
           <a href="#" className="underline">

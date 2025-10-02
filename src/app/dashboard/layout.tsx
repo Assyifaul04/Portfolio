@@ -14,12 +14,10 @@ export default function DashboardLayout({
 }) {
   const { data: session } = useSession();
 
-  // Jika tidak ada session, redirect ke login
   if (!session) {
     redirect("/login");
   }
 
-  // Jika bukan admin, redirect ke homepage
   if (session.user.role !== "admin") {
     redirect("/");
   }

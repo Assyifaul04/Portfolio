@@ -8,19 +8,18 @@ import { v4 as uuidv4 } from "uuid";
 
 // GET all projects
 export async function GET(req: NextRequest) {
-  const session = await getServerSession({ req, ...authOptions });
-  if (!session || session.user.role !== "admin" || !session.user.id)
-    return NextResponse.json([], { status: 401 });
+  try {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("admin_id", session.user.id)
-    .order("created_at", { ascending: false });
+    if (error) throw error;
 
-  if (error) return NextResponse.json([], { status: 500 });
-
-  return NextResponse.json(data || []);
+    return NextResponse.json(data || []);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
 
 // POST create project

@@ -8,73 +8,97 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Jika dibuka dalam popup (window.opener tersedia)
+    // Jika dibuka dalam popup
     if (typeof window !== "undefined" && window.opener) {
       window.opener.postMessage("auth-success", window.location.origin);
       window.close();
       return;
     }
 
+    // Jika bukan popup, jalankan redirect normal
     if (status === "loading") return;
+
     if (!session) {
       router.push("/auth/login");
       return;
     }
-    if ((session.user as any).role === "admin") {
-      router.push("/dashboard");
-    } else {
-      router.push("/");
-    }
+
+    router.push((session.user as any).role === "admin" ? "/dashboard" : "/");
   }, [session, status, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-100 dark:bg-slate-950">
-      {/* Overlay blur background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300 dark:from-slate-900 dark:via-slate-950 dark:to-slate-800 opacity-50"></div>
-      
-      {/* Modal Card */}
-      <div className="relative z-10 bg-white dark:bg-slate-900 p-10 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md mx-4">
-        <div className="text-center">
-          {/* Icon */}
-          <div className="inline-block p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-6">
-            <svg
-              className="w-12 h-12 text-slate-700 dark:text-slate-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24" 
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-
-          {/* Text */}
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-            Memverifikasi Akun
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-8">
-            Mohon tunggu sebentar...
-          </p>
-
-          {/* Spinner */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-slate-200 dark:border-slate-800 rounded-full"></div>
-              <div className="w-16 h-16 border-4 border-slate-700 dark:border-slate-300 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
-            </div>
-          </div>
-
-          {/* Progress indicator */}
-          {/* <div className="mt-8 flex justify-center space-x-2">
-            <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse delay-75"></div>
-            <div className="w-2 h-2 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse delay-150"></div>
-          </div> */}
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="text-center">
+        <div className="mb-8">
+          <svg className="w-20 h-20 mx-auto" viewBox="0 0 48 48">
+            <path
+              fill="#4285F4"
+              d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"
+            />
+            <defs>
+              <clipPath id="clip">
+                <path
+                  fill="#4285F4"
+                  d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"
+                />
+              </clipPath>
+            </defs>
+            <g clipPath="url(#clip)">
+              <path fill="#FBBC05" d="M0 37V11l17 13z" />
+              <path fill="#EA4335" d="M0 11l17 13 7-6.1L48 14V0H0z" />
+              <path fill="#34A853" d="M0 37l30-23 7.9 1L48 0v48H0z" />
+              <path fill="#4285F4" d="M48 48L17 24l-4-3 35-10z" />
+            </g>
+          </svg>
         </div>
+
+        <div className="relative inline-block">
+          <svg className="w-16 h-16 animate-spin" viewBox="0 0 48 48">
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              strokeWidth="4"
+              stroke="#e5e7eb"
+            />
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              strokeWidth="4"
+              stroke="#4285F4"
+              strokeDasharray="31.4 94.2"
+              strokeLinecap="round"
+              style={{
+                animation: "colorRotate 2s linear infinite",
+              }}
+            />
+          </svg>
+          <style jsx>{`
+            @keyframes colorRotate {
+              0% {
+                stroke: #4285f4;
+              }
+              25% {
+                stroke: #ea4335;
+              }
+              50% {
+                stroke: #fbbc05;
+              }
+              75% {
+                stroke: #34a853;
+              }
+              100% {
+                stroke: #4285f4;
+              }
+            }
+          `}</style>
+        </div>
+
+        <p className="mt-8 text-slate-600 text-lg">Memverifikasi Akun</p>
+        <p className="mt-2 text-slate-400 text-sm">Mohon tunggu sebentar...</p>
       </div>
     </div>
   );

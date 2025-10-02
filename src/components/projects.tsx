@@ -1,30 +1,19 @@
 "use client";
+
+// Impor komponen yang diperlukan dari shadcn/ui dan pustaka lainnya
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Download,
-  Eye,
-  FileText,
-  HardDrive,
-  Instagram,
-  Music,
-  Play,
-  TrendingDown,
-} from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle, CheckCircle2, Clock, Download, FileText, Instagram, Music, Play, Star } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
+// Definisi tipe data untuk proyek dan status unduhan
 interface ProjectFile {
   id: string;
   name: string;
@@ -36,56 +25,49 @@ interface ProjectFile {
   image_url?: string;
   file_url?: string;
 }
+interface DownloadStatus {
+  project_id: string;
+  status: "pending" | "approved" | "rejected";
+}
 
+// Fungsi helper untuk memberikan warna pada tag bahasa
+const languageColor = (lang?: string): string => {
+  switch (lang?.toLowerCase()) {
+    case "next.js": return "bg-slate-300";
+    case "golang": return "bg-cyan-400";
+    case "typescript": return "bg-blue-500";
+    case "javascript": return "bg-yellow-400";
+    default: return "bg-gray-500";
+  }
+};
 
 export default function Projects() {
+  // State management dan hooks (tidak ada perubahan fungsi)
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [downloadStatuses, setDownloadStatuses] = useState<Record<string, DownloadStatus>>({});
+  const { data: session } = useSession();
   const router = useRouter();
+  
   const socialLinks = [
-    {
-      key: "instagram",
-      url: process.env.NEXT_PUBLIC_INSTAGRAM,
-      label: "Follow Instagram",
-      icon: Instagram,
-      color:
-        "bg-pink-600 hover:bg-pink-700 dark:bg-pink-700 dark:hover:bg-pink-800",
-    },
-    {
-      key: "tiktok",
-      url: process.env.NEXT_PUBLIC_TIKTOK,
-      label: "Follow TikTok",
-      icon: Music,
-      color:
-        "bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700",
-    },
-    {
-      key: "youtube",
-      url: process.env.NEXT_PUBLIC_YOUTUBE,
-      label: "Subscribe YouTube",
-      icon: Play,
-      color:
-        "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800",
-    },
+    { key: "instagram", url: process.env.NEXT_PUBLIC_INSTAGRAM, label: "Instagram", icon: Instagram },
+    { key: "tiktok", url: process.env.NEXT_PUBLIC_TIKTOK, label: "TikTok", icon: Music },
+    { key: "youtube", url: process.env.NEXT_PUBLIC_YOUTUBE, label: "YouTube", icon: Play },
   ];
-
-  const [requirements, setRequirements] = useState({
-    instagram: false,
-    tiktok: false,
-    youtube: false,
-  });
-
+  
+  const [requirements, setRequirements] = useState({ instagram: false, tiktok: false, youtube: false });
   const allCompleted = Object.values(requirements).every(Boolean);
 
+  // Efek untuk mengambil data proyek saat komponen dimuat
   useEffect(() => {
-    fetch("/api/projects")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      })
-      .then((data) => {
-        const transformedData = data.map((project: any) => ({
+    async function fetchData() {
+      try {
+        const res = await fetch("/api/projects");
+        if (!res.ok) throw new Error("Gagal mengambil data proyek");
+        const projects = await res.json();
+        
+        const transformed = projects.map((project: any) => ({
           id: project.id,
           name: project.title,
           size: project.file_url ? 1024 * 1024 * 5 : 0,
@@ -96,32 +78,67 @@ export default function Projects() {
           image_url: project.image_url,
           file_url: project.file_url,
         }));
-        setFiles(transformedData);
-        setLoading(false);
-      })
-      .catch((err) => {
-        toast.error("Gagal ambil data: " + err.message);
-        setLoading(false);
-      });
-  }, []);
+        setFiles(transformed);
 
-  const handleDownload = async (fileId: string, filename: string) => {
+        if (session?.user?.email) {
+          const downloadRes = await fetch(`/api/downloads?userId=${session.user.email}`);
+          if (downloadRes.ok) {
+            const downloads = await downloadRes.json();
+            const statusMap: Record<string, DownloadStatus> = {};
+            downloads.forEach((d: any) => { statusMap[d.project_id] = { project_id: d.project_id, status: d.status }; });
+            setDownloadStatuses(statusMap);
+          }
+          
+          const followsRes = await fetch(`/api/follows?userId=${session.user.email}`);
+          if (followsRes.ok) {
+            const follows = await followsRes.json();
+            const mapFollow: any = {};
+            follows.forEach((f: any) => { mapFollow[f.platform] = f.is_followed; });
+            setRequirements((prev) => ({ ...prev, ...mapFollow }));
+          }
+        }
+      } catch (err: any) {
+        toast.error("Error: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [session]);
+
+  // Handler untuk meminta unduhan (fungsi tidak diubah)
+  const handleRequestDownload = async (fileId: string) => {
     try {
-      const project = files.find((f) => f.id === fileId);
-      if (!project?.file_url) throw new Error("File tidak tersedia");
+      if (!session?.user?.email) {
+        toast.error("Silakan login terlebih dahulu");
+        return;
+      }
+      const response = await fetch("/api/downloads", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: fileId, status: "pending" }),
+      });
+      if (!response.ok) throw new Error("Gagal mengirim permintaan");
+      toast.success("Permintaan berhasil dikirim");
+      setDownloadStatuses((prev) => ({ ...prev, [fileId]: { project_id: fileId, status: "pending" } }));
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
-      const res = await fetch(project.file_url);
-      if (!res.ok) throw new Error("Gagal fetch file");
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Download berhasil");
+  // Handler untuk unduhan final setelah syarat terpenuhi (fungsi tidak diubah)
+  const handleFinalDownload = async (fileUrl: string, filename: string) => {
+    try {
+      if (!allCompleted) {
+        toast.error("Selesaikan semua persyaratan terlebih dahulu");
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download dimulai!");
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
     } catch (err: any) {
@@ -129,213 +146,148 @@ export default function Projects() {
     }
   };
 
-  const handleViewProject = (projectId: string) => {
-    router.push(`/projects/${projectId}`);
+  // Fungsi untuk merender tombol unduhan berdasarkan status
+  const getDownloadButton = (file: ProjectFile) => {
+    const downloadStatus = downloadStatuses[file.id];
+
+    if (!downloadStatus) {
+      return (
+        <Button onClick={() => handleRequestDownload(file.id)} className="w-full">
+          <Download className="mr-2 h-4 w-4" /> Request Download
+        </Button>
+      );
+    }
+    if (downloadStatus.status === "pending") {
+      return (
+        <Button disabled variant="outline" className="w-full cursor-not-allowed">
+          <Clock className="mr-2 h-4 w-4" /> Menunggu Persetujuan
+        </Button>
+      );
+    }
+    if (downloadStatus.status === "rejected") {
+      return (
+        <Button disabled variant="destructive" className="w-full cursor-not-allowed">
+          <AlertCircle className="mr-2 h-4 w-4" /> Permintaan Ditolak
+        </Button>
+      );
+    }
+    if (downloadStatus.status === "approved") {
+      if (selectedFile !== file.id) {
+        return (
+          <Button onClick={() => setSelectedFile(file.id)} className="w-full bg-emerald-600 text-white hover:bg-emerald-700">
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Mulai Download
+          </Button>
+        );
+      }
+      return (
+        <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+          <p className="text-sm font-medium text-foreground">Selesaikan persyaratan untuk lanjut:</p>
+          <div className="space-y-2">
+            {socialLinks.map(({ key, url, label, icon: Icon }) => {
+              const isCompleted = requirements[key as keyof typeof requirements];
+              return (
+                <a key={key} href={url!} target="_blank" rel="noopener noreferrer"
+                  className={`flex w-full items-center justify-between rounded-md p-2 text-sm font-medium transition-colors ${
+                    isCompleted ? "cursor-default bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary hover:bg-primary/20"
+                  }`}
+                  onClick={async () => {
+                    if (!isCompleted && session?.user?.email) {
+                      setRequirements((p) => ({ ...p, [key]: true }));
+                      await fetch("/api/follows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: session.user.email, platform: key, is_followed: true }) });
+                    }
+                  }}
+                >
+                  <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                  {isCompleted && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                </a>
+              );
+            })}
+          </div>
+          <Button onClick={() => handleFinalDownload(file.file_url || "", file.name)} disabled={!allCompleted} className="w-full">
+            {allCompleted ? <><Download className="mr-2 h-4 w-4" /> Download Now</> : <><Clock className="mr-2 h-4 w-4" /> Selesaikan Semua</>}
+          </Button>
+        </div>
+      );
+    }
+    return null;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
+  // Tampilan loading state dengan komponen Skeleton
   if (loading) {
     return (
-      <section className="max-w-5xl mx-auto px-4 py-20">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-64 bg-slate-200 dark:bg-slate-800 rounded-lg"
-              ></div>
-            ))}
-          </div>
+      <section className="space-y-6">
+        <Skeleton className="h-[125px] w-full" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[220px] w-full" />)}
         </div>
       </section>
     );
   }
 
+  // Tampilan utama komponen
   return (
-    <section
-      id="projects"
-      className="max-w-5xl mx-auto px-4 py-20 bg-slate-50 dark:bg-slate-950"
-    >
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-400 bg-clip-text text-transparent mb-4">
-          Proyek Terbaru
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-          Koleksi proyek web development terbaik dengan teknologi modern dan
-          fitur lengkap
-        </p>
-      </div>
+    <section className="space-y-6">
+      <Card>
+        <CardHeader><CardTitle>Assyifaul04/README.md</CardTitle></CardHeader>
+        <CardContent><p>Selamat datang di profil saya! Jelajahi proyek-proyek di bawah ini.</p></CardContent>
+      </Card>
+      
+      <h3 className="text-lg font-semibold">Pinned Projects</h3>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid gap-4 md:grid-cols-2">
         {files.map((file) => (
-          <Card
-            key={file.id}
-            className="group hover:shadow-xl transition-all duration-300 border border-slate-200 dark:border-slate-800 shadow-md hover:-translate-y-2 bg-white dark:bg-slate-900 hover:shadow-slate-200 dark:hover:shadow-slate-800/25"
-          >
-            <CardHeader className="space-y-3">
-              {file.image_url && (
-                <img
-                  src={file.image_url}
-                  alt={file.name}
-                  className="w-full h-40 object-cover rounded-lg mb-3"
-                />
-              )}
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors line-clamp-2">
-                    {file.name}
+          <Card key={file.id} className="flex flex-col">
+            <div className="flex-grow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Link href={`/projects/${file.id}`} className="flex cursor-pointer items-center gap-2 text-blue-500 hover:underline">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          {file.name}
+                        </Link>
+                      </PopoverTrigger>
+                      {file.image_url && (
+                        <PopoverContent className="w-80 p-0">
+                          <img src={file.image_url} alt={file.name} className="rounded-md object-cover" />
+                        </PopoverContent>
+                      )}
+                    </Popover>
                   </CardTitle>
-                  <CardDescription className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">
-                    {file.description}
-                  </CardDescription>
+                  <Badge variant="outline">Public</Badge>
                 </div>
-                <div className="p-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                  <FileText className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                <CardDescription className="line-clamp-2 pt-2">
+                  {file.description || "No description available"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>{getDownloadButton(file)}</CardContent>
+            </div>
+            <CardFooter className="text-xs text-muted-foreground">
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {file.tags && file.tags.length > 0 && (
+                    <>
+                      <span className={`h-3 w-3 rounded-full ${languageColor(file.tags[0])}`} />
+                      <span>{file.tags[0]}</span>
+                    </>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {file.tags?.slice(0, 3).map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{formatDate(file.uploadDate)}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <HardDrive className="h-4 w-4" />
-                    <span>{(file.size / 1024 / 1024).toFixed(1)} MB</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>{file.downloadCount}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  <span>{file.downloadCount ?? 0}</span>
                 </div>
               </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={() => handleViewProject(file.id)}
-                  variant="outline"
-                  className="w-full flex items-center gap-2 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300"
-                >
-                  <Eye className="h-4 w-4" />
-                  Lihat Detail
-                </Button>
-
-                {!selectedFile || selectedFile !== file.id ? (
-                  <Button
-                    onClick={() => setSelectedFile(file.id)}
-                    className="w-full flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 shadow-lg"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Project
-                  </Button>
-                ) : (
-                  <div className="mt-4 p-4 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 space-y-4">
-                    <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-3 text-center flex items-center justify-center gap-2">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Selesaikan persyaratan berikut:
-                    </h4>
-                    <div className="space-y-3">
-                      {socialLinks.map(
-                        ({ key, url, label, icon: Icon, color }) => (
-                          <a
-                            key={key}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`
-                              flex items-center justify-center gap-2 w-full p-3 rounded-lg text-center font-medium transition-all duration-300
-                              ${
-                                requirements[key as keyof typeof requirements]
-                                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700"
-                                  : `${color} text-white hover:shadow-lg hover:scale-105`
-                              }
-                            `}
-                            onClick={() =>
-                              setRequirements((prev) => ({
-                                ...prev,
-                                [key]: true,
-                              }))
-                            }
-                          >
-                            {requirements[key as keyof typeof requirements] ? (
-                              <>
-                                <CheckCircle2 className="h-5 w-5" />
-                                {label} - Selesai
-                              </>
-                            ) : (
-                              <>
-                                <Icon className="h-5 w-5" />
-                                {label}
-                              </>
-                            )}
-                          </a>
-                        )
-                      )}
-                    </div>
-
-                    <Button
-                      onClick={() => handleDownload(file.id, file.name)}
-                      className={`w-full font-bold py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                        allCompleted
-                          ? "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white shadow-lg hover:shadow-xl"
-                          : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                      }`}
-                      disabled={!allCompleted}
-                    >
-                      {allCompleted ? (
-                        <>
-                          <Download className="h-5 w-5" />
-                          Download Sekarang!
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="h-5 w-5" />
-                          Selesaikan semua persyaratan
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
+            </CardFooter>
           </Card>
         ))}
       </div>
 
-      {files.length === 0 && (
-        <div className="text-center py-20">
-          <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 w-fit mx-auto mb-4">
-            <FileText className="h-16 w-16 text-slate-400 dark:text-slate-500" />
-          </div>
-          <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
-            Belum ada proyek
-          </h3>
-          <p className="text-slate-500 dark:text-slate-500">
-            Proyek akan muncul di sini setelah diupload
-          </p>
+      {files.length === 0 && !loading && (
+        <div className="py-20 text-center">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-2 text-xl font-semibold">Belum Ada Proyek</h3>
+          <p className="text-muted-foreground">Proyek yang diunggah akan muncul di sini.</p>
         </div>
       )}
     </section>

@@ -8,18 +8,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Home,
+  Folder,
   BarChart3,
   Users,
+  Download,
+  CheckCircle,
+  XCircle,
+  Clock,
+  UserCog,
   Settings,
-  FileText,
-  Calendar,
-  Folder,
   HelpCircle,
-  Code,
-  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// === MAIN NAVIGATION (sesuai DB) ===
 const navigation = [
   {
     name: "Dashboard",
@@ -32,26 +34,43 @@ const navigation = [
     icon: Folder,
   },
   {
-    name: "Calendar",
-    href: "/dashboard/calendar",
-    icon: Calendar,
+    name: "Followers",
+    href: "/dashboard/followers",
+    icon: BarChart3,
+  },
+  {
+    name: "Downloads",
+    href: "/dashboard/downloads",
+    icon: Download,
   },
 ];
 
-const tools = [
+// === SUB NAVIGATION khusus downloads ===
+const downloadsNav = [
   {
-    name: "Database",
-    href: "/dashboard/database",
-    icon: Database,
+    name: "Pending",
+    href: "/dashboard/downloads/pending",
+    icon: Clock,
   },
   {
-    name: "Documents",
-    href: "/dashboard/documents",
-    icon: FileText,
+    name: "Approved",
+    href: "/dashboard/downloads/approved",
+    icon: CheckCircle,
+  },
+  {
+    name: "Rejected",
+    href: "/dashboard/downloads/rejected",
+    icon: XCircle,
   },
 ];
 
+// === SETTINGS & SUPPORT ===
 const settings = [
+  {
+    name: "User Roles",
+    href: "/dashboard/users/roles",
+    icon: UserCog,
+  },
   {
     name: "Settings",
     href: "/dashboard/settings",
@@ -67,13 +86,38 @@ const settings = [
 export default function Sidebar() {
   const pathname = usePathname();
 
+  const renderNav = (items: typeof navigation) =>
+    items.map((item) => {
+      const isActive = pathname === item.href;
+      return (
+        <Button
+          key={item.name}
+          asChild
+          variant={isActive ? "secondary" : "ghost"}
+          className={cn(
+            "w-full justify-start",
+            isActive
+              ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <Link href={item.href}>
+            <item.icon className="mr-3 h-4 w-4" />
+            {item.name}
+          </Link>
+        </Button>
+      );
+    });
+
   return (
     <div className="flex h-full w-64 flex-col bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-slate-200 dark:border-slate-800 px-6">
         <Link href="/dashboard" className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-slate-900 dark:bg-slate-100 rounded-lg flex items-center justify-center">
-            <span className="text-slate-100 dark:text-slate-900 font-bold text-sm">ST</span>
+            <span className="text-slate-100 dark:text-slate-900 font-bold text-sm">
+              ST
+            </span>
           </div>
           <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
             Syn_Taxx
@@ -84,66 +128,22 @@ export default function Sidebar() {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
         <div className="space-y-6">
-          {/* Main Navigation */}
+          {/* Overview */}
           <div>
             <h3 className="mb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Overview
+              Main
             </h3>
-            <nav className="space-y-1">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Button
-                    key={item.name}
-                    asChild
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start",
-                      isActive
-                        ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  </Button>
-                );
-              })}
-            </nav>
+            <nav className="space-y-1">{renderNav(navigation)}</nav>
           </div>
 
           <Separator className="bg-slate-200 dark:bg-slate-800" />
 
-          {/* Tools */}
+          {/* Downloads Submenu */}
           <div>
             <h3 className="mb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Tools
+              Downloads
             </h3>
-            <nav className="space-y-1">
-              {tools.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Button
-                    key={item.name}
-                    asChild
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start",
-                      isActive
-                        ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  </Button>
-                );
-              })}
-            </nav>
+            <nav className="space-y-1">{renderNav(downloadsNav)}</nav>
           </div>
 
           <Separator className="bg-slate-200 dark:bg-slate-800" />
@@ -151,31 +151,9 @@ export default function Sidebar() {
           {/* Settings */}
           <div>
             <h3 className="mb-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Support
+              Admin
             </h3>
-            <nav className="space-y-1">
-              {settings.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Button
-                    key={item.name}
-                    asChild
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start",
-                      isActive
-                        ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  </Button>
-                );
-              })}
-            </nav>
+            <nav className="space-y-1">{renderNav(settings)}</nav>
           </div>
         </div>
       </ScrollArea>
