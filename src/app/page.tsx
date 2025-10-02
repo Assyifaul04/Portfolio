@@ -8,11 +8,14 @@ import { Loader2 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ProfileCard from "@/components/profile-card";
+import About from "@/components/about";
+import Contact from "@/components/contact";
 import Projects from "@/components/projects";
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+
 
   // --- LOGIKA TIDAK DIUBAH ---
   useEffect(() => {
@@ -70,7 +73,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
+      
+      <About/>
+      <Contact/>
       <Footer />
     </main>
   );
