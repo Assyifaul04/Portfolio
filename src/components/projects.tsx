@@ -195,8 +195,8 @@ export default function Projects() {
       return (
         <Button 
           variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 text-slate-500 hover:text-slate-700"
+          size="sm"
+          className="h-8 px-2 text-slate-500 hover:text-slate-700"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -204,7 +204,8 @@ export default function Projects() {
           }}
           title="Request Download"
         >
-          <Download className="h-4 w-4" />
+          <Download className="h-4 w-4 mr-1" />
+          <span className="text-xs">Request</span>
         </Button>
       );
     }
@@ -216,11 +217,12 @@ export default function Projects() {
           <PopoverTrigger asChild>
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-amber-500 hover:text-amber-700"
+              size="sm"
+              className="h-8 px-2 text-amber-500 hover:text-amber-700"
               title="Menunggu Persetujuan"
             >
-              <Clock className="h-4 w-4" />
+              <Clock className="h-4 w-4 mr-1" />
+              <span className="text-xs">Pending</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent side="left" className="w-64">
@@ -243,11 +245,12 @@ export default function Projects() {
           <PopoverTrigger asChild>
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-red-500 hover:text-red-700"
+              size="sm"
+              className="h-8 px-2 text-red-500 hover:text-red-700"
               title="Permintaan Ditolak"
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 mr-1" />
+              <span className="text-xs">Rejected</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent side="left" className="w-64">
@@ -272,8 +275,8 @@ export default function Projects() {
           <PopoverTrigger asChild>
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+              size="sm"
+              className="h-8 px-2 text-emerald-600 hover:text-emerald-700"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -281,7 +284,8 @@ export default function Projects() {
               }}
               title="Download Disetujui - Klik untuk mulai"
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              <span className="text-xs">Approved</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent side="left" className="w-80" onInteractOutside={(e) => e.preventDefault()}>

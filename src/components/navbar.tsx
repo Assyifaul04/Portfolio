@@ -85,14 +85,8 @@ export default function Navbar() {
               href="/"
               className="group flex items-center space-x-2 text-2xl font-bold text-slate-900 dark:text-slate-100"
             >
-              <Image
-                src="/assets/logo.jpg"
-                alt="Logo"
-                width={45}
-                height={45}
-                className="rounded-full"
-              />
-              <span className="hidden sm:inline font-bold">Syn_Taxx</span>
+              <span className="text-primary">@</span>
+              <span className="hidden sm:inline font-bold">syn_taxx</span>
             </Link>
 
             {/* Menu */}

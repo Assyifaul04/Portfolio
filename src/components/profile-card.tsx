@@ -16,8 +16,7 @@ export default function ProfileCard() {
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground">@syn_taxx</h1>
-        <p className="text-lg text-muted-foreground">Assyifaul04</p>
+        <h1 className="text-2xl font-bold text-foreground">Assyifaul Izza</h1>
       </div>
 
       <Button variant="outline" className="w-full">

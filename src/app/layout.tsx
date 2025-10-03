@@ -19,7 +19,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground`}>
+      {/* <body className={`${inter.className} bg-background text-foreground`}> */}
+      <body className="font-sans bg-background text-foreground">
         <Providers>{children}</Providers> {/* ← pakai wrapper client */}
         <Toaster position="top-right" richColors />
       </body>

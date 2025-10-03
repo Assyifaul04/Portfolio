@@ -18,6 +18,7 @@ import {
   UserCog,
   Settings,
   HelpCircle,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +69,7 @@ const downloadsNav = [
 const settings = [
   {
     name: "User Roles",
-    href: "/dashboard/users/roles",
+    href: "/dashboard/users",
     icon: UserCog,
   },
   {
