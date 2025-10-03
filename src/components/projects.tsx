@@ -82,6 +82,8 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [downloadStatuses, setDownloadStatuses] = useState<Record<string, DownloadStatus>>({});
+  const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
+  const [clickCount, setClickCount] = useState<Record<string, number>>({});
   const { data: session } = useSession();
   const router = useRouter();
   
@@ -140,6 +142,27 @@ export default function Projects() {
     }
     fetchData();
   }, [session]);
+
+  // Handler untuk klik nama project
+  const handleProjectClick = (fileId: string) => {
+    const currentCount = clickCount[fileId] || 0;
+    
+    if (currentCount === 0) {
+      // Klik pertama: buka popover gambar
+      setImagePopoverOpen(fileId);
+      setClickCount({ ...clickCount, [fileId]: 1 });
+      
+      // Reset click count setelah 500ms
+      setTimeout(() => {
+        setClickCount((prev) => ({ ...prev, [fileId]: 0 }));
+      }, 500);
+    } else if (currentCount === 1) {
+      // Klik kedua: navigasi ke detail
+      router.push(`/projects/${fileId}`);
+      setClickCount({ ...clickCount, [fileId]: 0 });
+      setImagePopoverOpen(null);
+    }
+  };
 
   // Handler untuk meminta unduhan (fungsi tidak diubah)
   const handleRequestDownload = async (fileId: string, e?: React.MouseEvent) => {
@@ -357,7 +380,7 @@ export default function Projects() {
       <section className="space-y-6">
         <Skeleton className="h-[100px] w-full rounded-md" />
         <div className="grid gap-4 md:grid-cols-2">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-[180px] w-full rounded-md" />)}
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-[140px] w-full rounded-md" />)}
         </div>
       </section>
     );
@@ -389,29 +412,42 @@ export default function Projects() {
         </Link>
       </div>
 
-      {/* Grid Projects dengan style GitHub */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {/* Grid Projects dengan style GitHub - 2 kolom persegi panjang */}
+      <div className="grid gap-4 md:grid-cols-2">
         {files.map((file) => (
           <Card key={file.id} className="flex flex-col border-slate-300 hover:border-slate-400 transition-colors">
-            <CardHeader className="pb-2">
+            <div className="p-4 space-y-3">
+              {/* Header dengan title dan badge */}
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <FileText className="h-4 w-4 text-slate-500 flex-shrink-0" />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Link 
-                        href={`/projects/${file.id}`} 
-                        className="font-semibold text-blue-600 hover:underline truncate cursor-pointer text-sm"
-                      >
-                        {file.name}
-                      </Link>
-                    </PopoverTrigger>
-                    {file.image_url && (
-                      <PopoverContent className="w-80 p-0">
+                  {file.image_url ? (
+                    <Popover open={imagePopoverOpen === file.id} onOpenChange={(open) => {
+                      if (!open) setImagePopoverOpen(null);
+                    }}>
+                      <PopoverTrigger asChild>
+                        <span 
+                          className="font-semibold text-blue-600 hover:underline truncate cursor-pointer text-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleProjectClick(file.id);
+                          }}
+                        >
+                          {file.name}
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0" side="top">
                         <img src={file.image_url} alt={file.name} className="rounded-md object-cover w-full" />
                       </PopoverContent>
-                    )}
-                  </Popover>
+                    </Popover>
+                  ) : (
+                    <Link 
+                      href={`/projects/${file.id}`} 
+                      className="font-semibold text-blue-600 hover:underline truncate cursor-pointer text-sm"
+                    >
+                      {file.name}
+                    </Link>
+                  )}
                 </div>
                 {downloadStatuses[file.id] && (
                   <Badge 
@@ -432,15 +468,13 @@ export default function Projects() {
                   </Badge>
                 )}
               </div>
-            </CardHeader>
-            
-            <CardContent className="flex-grow pb-2 pt-0">
-              <p className="text-xs text-slate-600 line-clamp-2">
+              
+              {/* Description */}
+              <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
                 {file.description || "No description available"}
               </p>
-            </CardContent>
-            
-            <CardFooter className="pt-0 pb-3">
+              
+              {/* Footer dengan language dan actions */}
               <div className="flex w-full items-center justify-between text-xs text-slate-600">
                 <div className="flex items-center gap-2">
                   {file.tags && file.tags.length > 0 && (
@@ -462,7 +496,7 @@ export default function Projects() {
                   {getDownloadButton(file)}
                 </div>
               </div>
-            </CardFooter>
+            </div>
           </Card>
         ))}
       </div>

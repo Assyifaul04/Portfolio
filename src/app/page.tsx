@@ -54,29 +54,34 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-background">
+    <main className="flex min-h-screen flex-col bg-background pt-16">
       <Navbar />
-      
-      {/* PERBAIKAN: Tambahkan `mt-16` atau `mt-20` (sesuaikan dengan tinggi Navbar).
-        Ini akan memberi jarak atas pada konten agar tidak tertutup Navbar.
-      */}
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 mt-16">
+  
+      {/* Profile + Projects */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Kolom Profil (Kiri) */}
           <div className="lg:col-span-1">
             <ProfileCard />
           </div>
-
-          {/* Kolom Proyek (Kanan) */}
           <div className="lg:col-span-3">
             <Projects />
           </div>
         </div>
-      </div>
-      
-      <About/>
-      <Contact/>
+      </section>
+  
+      {/* About */}
+      <section className="py-16">
+        <About />
+      </section>
+  
+      {/* Contact */}
+      <section className="py-16">
+        <Contact />
+      </section>
+  
+      {/* Footer */}
       <Footer />
     </main>
   );
+  
 }

@@ -13,9 +13,10 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { signOut, useSession } from "next-auth/react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -85,11 +86,10 @@ export default function Navbar() {
               href="/"
               className="group flex items-center space-x-2 text-2xl font-bold text-slate-900 dark:text-slate-100"
             >
-              <span className="text-primary">@</span>
-              <span className="hidden sm:inline font-bold">syn_taxx</span>
+              <span className="text-primary">@syn_taxx</span>
             </Link>
 
-            {/* Menu */}
+            {/* Desktop Menu */}
             <NavigationMenu className="hidden md:flex">
               <NavigationMenuList className="flex space-x-1">
                 {["about", "projects", "contact"].map((section) => (
@@ -108,98 +108,122 @@ export default function Navbar() {
               </NavigationMenuList>
             </NavigationMenu>
 
-            {/* Avatar with Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="ml-4 px-3 py-2 h-auto rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all duration-300"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {userProfile?.name || "Guest"}
-                    </span>
-                    <Avatar className="h-9 w-9 ring-2 ring-slate-300 dark:ring-slate-700 transition-all duration-300">
-                      <AvatarImage
-                        src={
-                          userProfile?.avatar_url || "/avatar-placeholder.png"
-                        }
-                      />
-                      <AvatarFallback className="bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
-                        {userProfile?.name?.[0] || "ST"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 mt-2 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl"
-              >
-                {!userProfile ? (
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/auth/login"
-                      className="text-slate-700 dark:text-slate-300"
-                    >
-                      Login
-                    </Link>
-                  </DropdownMenuItem>
-                ) : (
-                  <>
-                    <div className="px-2 py-2 mb-1 border-b border-slate-200 dark:border-slate-800">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {userProfile.name || "User"}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {userProfile.email}
-                      </p>
-                    </div>
-
-                    {/* Kalau admin muncul menu Dashboard & Settings */}
-                    {userProfile.role === "admin" && (
-                      <>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href="/dashboard"
-                            className="text-slate-700 dark:text-slate-300"
-                          >
-                            Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href="/settings"
-                            className="text-slate-700 dark:text-slate-300"
-                          >
-                            Settings
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    )}
-
-                    {/* Kalau user biasa tetap ada Riwayat */}
-                    {userProfile.role !== "admin" && (
-                      <DropdownMenuItem asChild>
+            <div className="flex items-center gap-2">
+              {/* Mobile Menu (Hamburger) */}
+              <div className="md:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-6 w-6" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-64">
+                    <nav className="flex flex-col space-y-3 mt-6">
+                      {["about", "projects", "contact"].map((section) => (
                         <Link
-                          href="/riwayat"
-                          className="text-slate-700 dark:text-slate-300"
+                          key={section}
+                          href={`#${section}`}
+                          className="px-3 py-2 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                         >
-                          Download History
+                          {section}
                         </Link>
-                      </DropdownMenuItem>
-                    )}
+                      ))}
+                    </nav>
+                  </SheetContent>
+                </Sheet>
+              </div>
 
-                    <DropdownMenuItem
-                      onSelect={handleLogout}
-                      className="text-red-600 dark:text-red-400"
-                    >
-                      Logout
+              {/* Avatar with Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="px-3 py-2 h-auto rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all duration-300"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {userProfile?.name || "Guest"}
+                      </span>
+                      <Avatar className="h-9 w-9 ring-2 ring-slate-300 dark:ring-slate-700 transition-all duration-300">
+                        <AvatarImage
+                          src={
+                            userProfile?.avatar_url || "/avatar-placeholder.png"
+                          }
+                        />
+                        <AvatarFallback className="bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
+                          {userProfile?.name?.[0] || "ST"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 mt-2 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl"
+                >
+                  {!userProfile ? (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/auth/login"
+                        className="text-slate-700 dark:text-slate-300"
+                      >
+                        Login
+                      </Link>
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  ) : (
+                    <>
+                      <div className="px-2 py-2 mb-1 border-b border-slate-200 dark:border-slate-800">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {userProfile.name || "User"}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {userProfile.email}
+                        </p>
+                      </div>
+
+                      {userProfile.role === "admin" && (
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href="/dashboard"
+                              className="text-slate-700 dark:text-slate-300"
+                            >
+                              Dashboard
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href="/settings"
+                              className="text-slate-700 dark:text-slate-300"
+                            >
+                              Settings
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {userProfile.role !== "admin" && (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/riwayat"
+                            className="text-slate-700 dark:text-slate-300"
+                          >
+                            Download History
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuItem
+                        onSelect={handleLogout}
+                        className="text-red-600 dark:text-red-400"
+                      >
+                        Logout
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
