@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   NavigationMenu,
@@ -20,6 +21,7 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 
 interface UserProfile {
   id: string;
@@ -33,6 +35,7 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const router = useRouter();
 
   // Scroll effect
@@ -71,59 +74,68 @@ export default function Navbar() {
   };
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-slate-50/95 dark:bg-slate-950/95 shadow-lg backdrop-blur-md"
-          : "bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-sm"
-      }`}
-    >
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+          scrolled
+            ? "bg-white/95 dark:bg-slate-950/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-sm"
+            : "bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800"
+        }`}
+      >
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link
-              href="/"
-              className="group flex items-center space-x-2 text-2xl font-bold text-slate-900 dark:text-slate-100"
-            >
-              <span className="text-primary">@syn_taxx</span>
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="flex items-center text-xl font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <span>@syn_taxx</span>
+              </Link>
 
-            {/* Desktop Menu */}
-            <NavigationMenu className="hidden md:flex">
-              <NavigationMenuList className="flex space-x-1">
-                {["about", "projects", "contact"].map((section) => (
-                  <NavigationMenuItem key={section}>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="relative overflow-hidden group hover:bg-slate-200 dark:hover:bg-slate-800 transition-all duration-300 text-slate-700 dark:text-slate-300"
-                    >
-                      <Link href={`#${section}`} className="relative z-10">
-                        <span className="capitalize">{section}</span>
-                      </Link>
-                    </Button>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
+              {/* Desktop Menu */}
+              <NavigationMenu className="hidden md:flex ml-4">
+                <NavigationMenuList className="flex items-center gap-2">
+                  {["about", "projects", "contact"].map((section) => (
+                    <NavigationMenuItem key={section}>
+                      <Button
+                        asChild
+                        variant="ghost"
+                        className="h-8 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md"
+                      >
+                        <Link href={`#${section}`}>
+                          <span className="capitalize">{section}</span>
+                        </Link>
+                      </Button>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Mobile Menu (Hamburger) */}
               <div className="md:hidden">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Menu className="h-6 w-6" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                    >
+                      <Menu className="h-5 w-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-64">
-                    <nav className="flex flex-col space-y-3 mt-6">
+                  <SheetContent
+                    side="left"
+                    className="w-64 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                  >
+                    <nav className="flex flex-col gap-1 mt-8">
                       {["about", "projects", "contact"].map((section) => (
                         <Link
                           key={section}
                           href={`#${section}`}
-                          className="px-3 py-2 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                          className="px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 capitalize"
                         >
                           {section}
                         </Link>
@@ -138,55 +150,50 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="px-3 py-2 h-auto rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all duration-300"
+                    className="h-8 w-8 rounded-full p-0 hover:bg-transparent"
                   >
-                    <div className="flex items-center space-x-3">
-                      <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {userProfile?.name || "Guest"}
-                      </span>
-                      <Avatar className="h-9 w-9 ring-2 ring-slate-300 dark:ring-slate-700 transition-all duration-300">
-                        <AvatarImage
-                          src={
-                            userProfile?.avatar_url || "/avatar-placeholder.png"
-                          }
-                        />
-                        <AvatarFallback className="bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
-                          {userProfile?.name?.[0] || "ST"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
+                    <Avatar className="h-8 w-8 ring-1 ring-slate-300 dark:ring-slate-700 hover:ring-slate-400 dark:hover:ring-slate-600 transition-all cursor-pointer">
+                      <AvatarImage
+                        src={userProfile?.avatar_url || "/avatar-placeholder.png"}
+                      />
+                      <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">
+                        {userProfile?.name?.[0] || "ST"}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 mt-2 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-xl"
+                  className="w-56 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg"
                 >
                   {!userProfile ? (
                     <DropdownMenuItem asChild>
                       <Link
                         href="/auth/login"
-                        className="text-slate-700 dark:text-slate-300"
+                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
                       >
                         Login
                       </Link>
                     </DropdownMenuItem>
                   ) : (
                     <>
-                      <div className="px-2 py-2 mb-1 border-b border-slate-200 dark:border-slate-800">
+                      <div className="px-3 py-2">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {userProfile.name || "User"}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           {userProfile.email}
                         </p>
                       </div>
+
+                      <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
 
                       {userProfile.role === "admin" && (
                         <>
                           <DropdownMenuItem asChild>
                             <Link
                               href="/dashboard"
-                              className="text-slate-700 dark:text-slate-300"
+                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
                             >
                               Dashboard
                             </Link>
@@ -194,28 +201,42 @@ export default function Navbar() {
                           <DropdownMenuItem asChild>
                             <Link
                               href="/settings"
-                              className="text-slate-700 dark:text-slate-300"
+                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
                             >
                               Settings
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
                         </>
                       )}
 
                       {userProfile.role !== "admin" && (
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href="/riwayat"
-                            className="text-slate-700 dark:text-slate-300"
-                          >
-                            Download History
-                          </Link>
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href="/riwayat"
+                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                            >
+                              Download History
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                        </>
                       )}
+
+                      {/* Account Menu Item - Trigger Delete Dialog */}
+                      <DropdownMenuItem
+                        onSelect={() => setDeleteDialogOpen(true)}
+                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                      >
+                        Account
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
 
                       <DropdownMenuItem
                         onSelect={handleLogout}
-                        className="text-red-600 dark:text-red-400"
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm cursor-pointer"
                       >
                         Logout
                       </DropdownMenuItem>
@@ -226,7 +247,13 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
+    </>
   );
 }

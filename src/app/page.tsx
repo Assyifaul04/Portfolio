@@ -1,23 +1,48 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2 } from "lucide-react";
-
+import { Loader2, ChevronDown, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import ProfileCard from "@/components/profile-card";
 import About from "@/components/about";
 import Contact from "@/components/contact";
 import Projects from "@/components/projects";
+import FilterCard, { FilterState } from "@/components/filter-card";
+import TableCard from "@/components/table-card";
+import { toast } from "sonner";
+
+// Interface untuk project
+interface ProjectFile {
+  id: string;
+  name: string;
+  size: number;
+  uploadDate: string;
+  description?: string;
+  tags?: string[];
+  downloadCount?: number;
+  image_url?: string;
+  file_url?: string;
+  category?: string;
+  status?: "completed" | "ongoing" | "planned";
+}
 
 export default function HomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [allProjects, setAllProjects] = useState<ProjectFile[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<ProjectFile[]>([]);
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    category: "all",
+    status: "all",
+    sortBy: "newest",
+  });
 
-
-  // --- LOGIKA TIDAK DIUBAH ---
+  // Check session
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -45,6 +70,93 @@ export default function HomePage() {
     checkSession();
   }, [router]);
 
+  // Fetch projects
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const res = await fetch("/api/projects");
+        if (!res.ok) throw new Error("Gagal mengambil data proyek");
+        const projects = await res.json();
+        
+        const transformed = projects.map((project: any) => ({
+          id: project.id,
+          name: project.title,
+          size: project.file_url ? 1024 * 1024 * 5 : 0,
+          uploadDate: project.created_at,
+          description: project.description ?? "",
+          tags: project.tags ?? [],
+          downloadCount: project.downloadCount ?? 0,
+          image_url: project.image_url,
+          file_url: project.file_url,
+          category: project.category || "other",
+          status: project.status || "completed",
+        }));
+        
+        setAllProjects(transformed);
+        setFilteredProjects(transformed);
+      } catch (err: any) {
+        toast.error("Error: " + err.message);
+      }
+    }
+    
+    if (showDetailView) {
+      fetchProjects();
+    }
+  }, [showDetailView]);
+
+  // Apply filters
+  useEffect(() => {
+    let result = [...allProjects];
+
+    // Search filter
+    if (filters.search) {
+      result = result.filter((project) =>
+        project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        project.description?.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (filters.category !== "all") {
+      result = result.filter((project) => project.category === filters.category);
+    }
+
+    // Status filter
+    if (filters.status !== "all") {
+      result = result.filter((project) => project.status === filters.status);
+    }
+
+    // Sort
+    switch (filters.sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime());
+        break;
+      case "name-asc":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "name-desc":
+        result.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "popular":
+        result.sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0));
+        break;
+    }
+
+    setFilteredProjects(result);
+  }, [filters, allProjects]);
+
+  const handleToggleView = () => {
+    setShowDetailView(!showDetailView);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -56,32 +168,89 @@ export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col bg-background pt-16">
       <Navbar />
-  
-      {/* Profile + Projects */}
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          <div className="lg:col-span-1">
-            <ProfileCard />
+
+      {!showDetailView ? (
+        // === TAMPILAN NORMAL (Landing Page) ===
+        <>
+          <section id="projects-section" className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+              <div className="lg:col-span-1">
+                <ProfileCard />
+              </div>
+              <div className="lg:col-span-3 space-y-6">
+                <Projects />
+                
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={handleToggleView}
+                    size="lg"
+                    className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 gap-2 px-8"
+                  >
+                    Lihat Selengkapnya
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="py-16">
+            <About />
+          </section>
+
+          <section className="py-16">
+            <Contact />
+          </section>
+
+          <Footer />
+        </>
+      ) : (
+        // === TAMPILAN DETAIL (GitHub Repository Style) ===
+        <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            {/* Profile Card - Sticky di samping kiri */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-20">
+                <ProfileCard />
+              </div>
+            </div>
+
+            {/* Area Konten Utama */}
+            <div className="lg:col-span-3 space-y-4">
+              {/* Header dengan Back Button */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                    Repositories
+                  </h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    {filteredProjects.length} repositories
+                  </p>
+                </div>
+                <Button
+                  onClick={handleToggleView}
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-200 dark:border-slate-800 gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Kembali
+                </Button>
+              </div>
+
+              {/* Filter Card - Full width di atas */}
+              <div className="w-full">
+                <FilterCard onFilterChange={handleFilterChange} />
+              </div>
+
+              {/* Table Card - Full width di bawah */}
+              <div className="w-full">
+                <TableCard projects={filteredProjects} />
+              </div>
+            </div>
           </div>
-          <div className="lg:col-span-3">
-            <Projects />
-          </div>
-        </div>
-      </section>
-  
-      {/* About */}
-      <section className="py-16">
-        <About />
-      </section>
-  
-      {/* Contact */}
-      <section className="py-16">
-        <Contact />
-      </section>
-  
-      {/* Footer */}
-      <Footer />
+        </section>
+      )}
     </main>
   );
-  
 }
