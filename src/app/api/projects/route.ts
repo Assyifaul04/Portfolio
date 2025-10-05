@@ -35,6 +35,16 @@ export async function POST(req: NextRequest) {
     .split(",")
     .map((t) => t.trim());
 
+  const type = (formData.get("type")?.toString() || "")
+    .split(",")
+    .map((t) => t.trim());
+
+  const language = (formData.get("language")?.toString() || "")
+    .split(",")
+    .map((l) => l.trim());
+
+  const sort = formData.get("sort")?.toString() || "Last updated";
+
   // Pastikan folder storage ada
   const storagePath = path.join(process.cwd(), "public", "storage");
   if (!fs.existsSync(storagePath))
@@ -70,6 +80,9 @@ export async function POST(req: NextRequest) {
         file_url,
         image_url,
         admin_id: session.user.id,
+        type,
+        language,
+        sort,
       },
     ])
     .select();
@@ -86,12 +99,12 @@ export async function PATCH(req: NextRequest) {
   if (!session || session.user.role !== "admin" || !session.user.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, title, description, file_url, image_url, tags } =
+  const { id, title, description, file_url, image_url, tags, type, language, sort } =
     await req.json();
 
   const { data, error } = await supabase
     .from("projects")
-    .update({ title, description, file_url, image_url, tags })
+    .update({ title, description, file_url, image_url, tags, type, language, sort })
     .eq("id", id)
     .eq("admin_id", session.user.id)
     .select();
@@ -124,35 +137,12 @@ export async function DELETE(req: NextRequest) {
 
   // Hapus file fisik
   if (data[0]?.file_url)
-    fs.existsSync(
-      path.join(
-        process.cwd(),
-        "public",
-        data[0].file_url.replace("/storage/", "storage/")
-      )
-    ) &&
-      fs.unlinkSync(
-        path.join(
-          process.cwd(),
-          "public",
-          data[0].file_url.replace("/storage/", "storage/")
-        )
-      );
+    fs.existsSync(path.join(process.cwd(), "public", data[0].file_url.replace("/storage/", "storage/"))) &&
+      fs.unlinkSync(path.join(process.cwd(), "public", data[0].file_url.replace("/storage/", "storage/")));
+
   if (data[0]?.image_url)
-    fs.existsSync(
-      path.join(
-        process.cwd(),
-        "public",
-        data[0].image_url.replace("/storage/", "storage/")
-      )
-    ) &&
-      fs.unlinkSync(
-        path.join(
-          process.cwd(),
-          "public",
-          data[0].image_url.replace("/storage/", "storage/")
-        )
-      );
+    fs.existsSync(path.join(process.cwd(), "public", data[0].image_url.replace("/storage/", "storage/"))) &&
+      fs.unlinkSync(path.join(process.cwd(), "public", data[0].image_url.replace("/storage/", "storage/")));
 
   return NextResponse.json({ message: "Project deleted", project: data[0] });
 }

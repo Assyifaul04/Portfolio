@@ -15,13 +15,14 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
+import { useTheme } from "next-themes";
 
 interface UserProfile {
   id: string;
@@ -36,7 +37,14 @@ export default function Navbar() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  // Ensure theme is mounted
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Scroll effect
   useEffect(() => {
@@ -145,105 +153,127 @@ export default function Navbar() {
                 </Sheet>
               </div>
 
-              {/* Avatar with Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full p-0 hover:bg-transparent"
-                  >
-                    <Avatar className="h-8 w-8 ring-1 ring-slate-300 dark:ring-slate-700 hover:ring-slate-400 dark:hover:ring-slate-600 transition-all cursor-pointer">
-                      <AvatarImage
-                        src={userProfile?.avatar_url || "/avatar-placeholder.png"}
-                      />
-                      <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">
-                        {userProfile?.name?.[0] || "ST"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg"
+              {/* Login Button atau Avatar with Dropdown */}
+              {!userProfile ? (
+                <Button
+                  asChild
+                  variant="default"
+                  className="h-9 px-4 text-sm font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
                 >
-                  {!userProfile ? (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/auth/login"
-                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
-                      >
-                        Login
-                      </Link>
+                  <Link href="/auth/login">Login</Link>
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer group">
+                      <Avatar className="h-8 w-8 ring-1 ring-slate-300 dark:ring-slate-700 group-hover:ring-slate-400 dark:group-hover:ring-slate-600 transition-all">
+                        <AvatarImage
+                          src={userProfile?.avatar_url || "/avatar-placeholder.png"}
+                        />
+                        <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">
+                          {userProfile?.name?.[0] || "ST"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden sm:inline text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                        {userProfile.name || "User"}
+                      </span>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg"
+                  >
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {userProfile.name || "User"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {userProfile.email}
+                      </p>
+                    </div>
+
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+
+                    {userProfile.role === "admin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/dashboard"
+                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                          >
+                            Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/settings"
+                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                          >
+                            Settings
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                      </>
+                    )}
+
+                    {userProfile.role !== "admin" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/riwayat"
+                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                          >
+                            Download History
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                      </>
+                    )}
+
+                    {/* Account Menu Item - Trigger Delete Dialog */}
+                    <DropdownMenuItem
+                      onSelect={() => setDeleteDialogOpen(true)}
+                      className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                    >
+                      Account
                     </DropdownMenuItem>
-                  ) : (
-                    <>
-                      <div className="px-3 py-2">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {userProfile.name || "User"}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          {userProfile.email}
-                        </p>
-                      </div>
 
-                      <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
 
-                      {userProfile.role === "admin" && (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href="/dashboard"
-                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
-                            >
-                              Dashboard
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href="/settings"
-                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
-                            >
-                              Settings
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                        </>
-                      )}
-
-                      {userProfile.role !== "admin" && (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href="/riwayat"
-                              className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
-                            >
-                              Download History
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                        </>
-                      )}
-
-                      {/* Account Menu Item - Trigger Delete Dialog */}
+                    {/* Theme Toggle */}
+                    {mounted && (
                       <DropdownMenuItem
-                        onSelect={() => setDeleteDialogOpen(true)}
-                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setTheme(theme === "dark" ? "light" : "dark");
+                        }}
+                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer flex items-center gap-2"
                       >
-                        Account
+                        {theme === "dark" ? (
+                          <>
+                            <Sun className="h-4 w-4" />
+                            <span>Light Mode</span>
+                          </>
+                        ) : (
+                          <>
+                            <Moon className="h-4 w-4" />
+                            <span>Dark Mode</span>
+                          </>
+                        )}
                       </DropdownMenuItem>
+                    )}
 
-                      <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
 
-                      <DropdownMenuItem
-                        onSelect={handleLogout}
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm cursor-pointer"
-                      >
-                        Logout
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem
+                      onSelect={handleLogout}
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm cursor-pointer"
+                    >
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

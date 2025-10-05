@@ -18,7 +18,9 @@ import {
   GitFork,
   ArrowLeft,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Package,
+  Code2
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -32,6 +34,9 @@ interface ProjectDetail {
   uploadDate: string;
   description?: string;
   tags?: string[];
+  type?: string[];
+  language?: string[];
+  sort?: string;
   downloadCount?: number;
   image_url?: string;
   file_url?: string;
@@ -105,7 +110,10 @@ export default function ProjectID() {
           uploadDate: data.created_at || new Date().toISOString(),
           description: data.description || "Deskripsi belum tersedia.",
           tags: data.tags || [],
-          downloadCount: data.downloadCount || 0,
+          type: data.type || [],
+          language: data.language || [],
+          sort: data.sort || "Last updated",
+          downloadCount: data.download_count || 0,
           image_url: data.image_url,
           file_url: data.file_url,
         };
@@ -256,10 +264,17 @@ export default function ProjectID() {
                   <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                     {project.name}
                   </h1>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Badge variant="secondary" className="text-xs">Public</Badge>
+                  <div className="flex items-center gap-2 text-sm text-slate-600 flex-wrap">
+                    {/* Project Types */}
+                    {project.type && project.type.length > 0 && project.type.map((t, i) => (
+                      <Badge key={`type-${i}`} variant="secondary" className="text-xs">
+                        {t}
+                      </Badge>
+                    ))}
+                    
+                    {/* Tags */}
                     {project.tags && project.tags.map((tag, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">
+                      <Badge key={`tag-${i}`} variant="outline" className="text-xs">
                         <span className={`h-2 w-2 rounded-full ${languageColor(tag)} mr-1.5`} />
                         {tag}
                       </Badge>
@@ -327,6 +342,18 @@ export default function ProjectID() {
                 <HardDrive className="h-4 w-4 flex-shrink-0" />
                 <span className="text-xs">{(project.size / 1024 / 1024).toFixed(1)} MB</span>
               </div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Download className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs">{project.downloadCount || 0} downloads</span>
+              </div>
+              
+              {project.sort && (
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Package className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-xs">{project.sort}</span>
+                </div>
+              )}
+              
               <Separator />
               
               {/* Download Status & Button */}
@@ -442,22 +469,65 @@ export default function ProjectID() {
             </CardContent>
           </Card>
 
-          {/* Languages */}
+          {/* Project Type Card - BARU */}
+          {project.type && project.type.length > 0 && (
+            <Card className="border-slate-300 dark:border-slate-700">
+              <CardHeader className="pb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Project Type
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {project.type.map((t, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Languages Card - UPDATED */}
+          {project.language && project.language.length > 0 && (
+            <Card className="border-slate-300 dark:border-slate-700">
+              <CardHeader className="pb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Code2 className="h-4 w-4" />
+                  Languages
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {project.language.map((lang, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-3 w-3 rounded-full ${languageColor(lang)}`} />
+                      <span className="text-slate-700 dark:text-slate-300">{lang}</span>
+                    </div>
+                    <span className="text-slate-500">{Math.floor(100 / project.language!.length)}%</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tags Card - BARU */}
           {project.tags && project.tags.length > 0 && (
             <Card className="border-slate-300 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <h3 className="text-sm font-semibold">Languages</h3>
+                <h3 className="text-sm font-semibold">Tags</h3>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {project.tags.map((tag, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-3 w-3 rounded-full ${languageColor(tag)}`} />
-                      <span className="text-slate-700 dark:text-slate-300">{tag}</span>
-                    </div>
-                    <span className="text-slate-500">100%</span>
-                  </div>
-                ))}
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {project.tags.map((tag, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      <span className={`h-2 w-2 rounded-full ${languageColor(tag)} mr-1.5`} />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}

@@ -19,17 +19,17 @@ interface FilterCardProps {
 
 export interface FilterState {
   search: string;
-  category: string;
-  status: string;
+  type: string;
+  language: string;
   sortBy: string;
 }
 
 export default function FilterCard({ onFilterChange }: FilterCardProps) {
   const [filters, setFilters] = useState<FilterState>({
     search: "",
-    category: "all",
-    status: "all",
-    sortBy: "newest",
+    type: "All",
+    language: "All",
+    sortBy: "Last updated",
   });
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
@@ -53,39 +53,46 @@ export default function FilterCard({ onFilterChange }: FilterCardProps) {
 
       {/* Filter Dropdowns */}
       <div className="flex flex-wrap gap-2 items-center">
-        {/* Type/Category */}
+        {/* Type Filter */}
         <Select
-          value={filters.category}
-          onValueChange={(value) => handleFilterChange("category", value)}
+          value={filters.type}
+          onValueChange={(value) => handleFilterChange("type", value)}
         >
-          <SelectTrigger className="w-[140px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
+          <SelectTrigger className="w-[150px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
             <span className="text-slate-700 dark:text-slate-300">Type: </span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="web">Web</SelectItem>
-            <SelectItem value="mobile">Mobile</SelectItem>
-            <SelectItem value="desktop">Desktop</SelectItem>
-            <SelectItem value="design">Design</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="All">All</SelectItem>
+            <SelectItem value="Publik">Public</SelectItem>
+            <SelectItem value="Pribadi">Private</SelectItem>
+            <SelectItem value="Sumber">Source</SelectItem>
+            <SelectItem value="Diarsipkan">Archived</SelectItem>
+            <SelectItem value="Dapat disponsori">Can be sponsored</SelectItem>
+            <SelectItem value="Templat">Template</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Language/Status */}
+        {/* Language Filter */}
         <Select
-          value={filters.status}
-          onValueChange={(value) => handleFilterChange("status", value)}
+          value={filters.language}
+          onValueChange={(value) => handleFilterChange("language", value)}
         >
-          <SelectTrigger className="w-[140px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
-            <span className="text-slate-700 dark:text-slate-300">Status: </span>
+          <SelectTrigger className="w-[150px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
+            <span className="text-slate-700 dark:text-slate-300">Language: </span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="ongoing">Ongoing</SelectItem>
-            <SelectItem value="planned">Planned</SelectItem>
+            <SelectItem value="All">All</SelectItem>
+            <SelectItem value="TypeScript">TypeScript</SelectItem>
+            <SelectItem value="JavaScript">JavaScript</SelectItem>
+            <SelectItem value="Python">Python</SelectItem>
+            <SelectItem value="Java">Java</SelectItem>
+            <SelectItem value="Dart">Dart</SelectItem>
+            <SelectItem value="PHP">PHP</SelectItem>
+            <SelectItem value="Blade">Blade</SelectItem>
+            <SelectItem value="C++">C++</SelectItem>
+            <SelectItem value="HTML">HTML</SelectItem>
           </SelectContent>
         </Select>
 
@@ -94,27 +101,16 @@ export default function FilterCard({ onFilterChange }: FilterCardProps) {
           value={filters.sortBy}
           onValueChange={(value) => handleFilterChange("sortBy", value)}
         >
-          <SelectTrigger className="w-[140px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
+          <SelectTrigger className="w-[150px] h-9 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-sm">
             <span className="text-slate-700 dark:text-slate-300">Sort: </span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="newest">Newest</SelectItem>
-            <SelectItem value="oldest">Oldest</SelectItem>
-            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-            <SelectItem value="popular">Most popular</SelectItem>
+            <SelectItem value="Last updated">Last updated</SelectItem>
+            <SelectItem value="Name">Name</SelectItem>
+            <SelectItem value="Stars">Stars</SelectItem>
           </SelectContent>
         </Select>
-
-        {/* New Button */}
-        <Button 
-          size="sm" 
-          className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
-        >
-          <span className="text-lg leading-none">+</span>
-          New
-        </Button>
       </div>
     </div>
   );
