@@ -18,6 +18,7 @@ import {
   Instagram,
   Music,
   Play,
+  Loader2,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -98,6 +99,7 @@ export default function Projects() {
   >({});
   const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
   const [clickCount, setClickCount] = useState<Record<string, number>>({});
+  const [downloading, setDownloading] = useState<string | null>(null);
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -128,6 +130,24 @@ export default function Projects() {
     youtube: false,
   });
   const allCompleted = Object.values(requirements).every(Boolean);
+
+  // Inject CSS untuk animasi
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes downloadProgress {
+        0% { width: 0%; }
+        100% { width: 100%; }
+      }
+      .animate-download-progress {
+        animation: downloadProgress 2s ease-in-out;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Fetch data
   useEffect(() => {
@@ -244,6 +264,19 @@ export default function Projects() {
         return;
       }
 
+      setDownloading(projectId);
+
+      // Toast loading dengan animasi download
+      const toastId = toast.loading(
+        <div className="flex items-center gap-2">
+          <Download className="h-4 w-4 animate-bounce" />
+          <span>Mengunduh file...</span>
+        </div>
+      );
+
+      // Simulasi delay untuk animasi
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Panggil endpoint /api/projects/[id]
       const response = await fetch(`/api/projects/${projectId}`);
 
@@ -258,20 +291,23 @@ export default function Projects() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      toast.success("Download dimulai!");
+      // Update toast menjadi success
+      toast.success(
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>Download berhasil!</span>
+        </div>,
+        { id: toastId }
+      );
 
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
-
-      setClickCount((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] || 0) + 1,
-      }));
-      setRequirements({ instagram: false, tiktok: false, youtube: false });
-      setSelectedFile(null);
+      setDownloading(null);
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
+      setDownloading(null);
     }
   };
 
@@ -306,6 +342,10 @@ export default function Projects() {
               size="sm"
               className="h-8 px-2 text-amber-500 hover:text-amber-700"
               title="Menunggu Persetujuan"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             >
               <Clock className="h-4 w-4 mr-1" />
               <span className="text-xs">Pending</span>
@@ -335,6 +375,10 @@ export default function Projects() {
               size="sm"
               className="h-8 px-2 text-red-500 hover:text-red-700"
               title="Permintaan Ditolak"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             >
               <AlertCircle className="h-4 w-4 mr-1" />
               <span className="text-xs">Rejected</span>
@@ -442,11 +486,17 @@ export default function Projects() {
                       file.id
                     );
                   }}
-                  disabled={!allCompleted}
-                  className="w-full"
+                  disabled={!allCompleted || downloading === file.id}
+                  className="w-full relative overflow-hidden"
                   size="sm"
                 >
-                  {allCompleted ? (
+                  {downloading === file.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Downloading...</span>
+                      <div className="absolute bottom-0 left-0 h-1 bg-emerald-400 animate-download-progress" />
+                    </>
+                  ) : allCompleted ? (
                     <>
                       <Download className="mr-2 h-4 w-4" /> Download Now
                     </>

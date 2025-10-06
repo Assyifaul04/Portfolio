@@ -99,21 +99,72 @@ export async function PATCH(req: NextRequest) {
   if (!session || session.user.role !== "admin" || !session.user.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, title, description, file_url, image_url, tags, type, language, sort } =
-    await req.json();
+  const formData = await req.formData();
+  const id = formData.get("id")?.toString();
+  const title = formData.get("title")?.toString();
+  const description = formData.get("description")?.toString();
+  const tags = (formData.get("tags")?.toString() || "").split(",").map(t => t.trim()).filter(Boolean);
+  const type = (formData.get("type")?.toString() || "").split(",").map(t => t.trim());
+  const language = (formData.get("language")?.toString() || "").split(",").map(l => l.trim());
+  const sort = formData.get("sort")?.toString() || "Last updated";
+
+  // Ambil project lama dulu
+  const { data: oldData, error: fetchError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !oldData) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+  // Upload file baru jika ada
+  let file_url = oldData.file_url;
+  const newFile = formData.get("file") as File;
+  if (newFile) {
+    const storagePath = path.join(process.cwd(), "public", "storage");
+    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
+    const fileName = `${uuidv4()}-${newFile.name}`;
+    const filePath = path.join(storagePath, fileName);
+    fs.writeFileSync(filePath, Buffer.from(await newFile.arrayBuffer()));
+    file_url = `/storage/${fileName}`;
+
+    // hapus file lama
+    if (oldData.file_url) {
+      const oldFilePath = path.join(process.cwd(), "public", oldData.file_url.replace("/storage/", "storage/"));
+      fs.existsSync(oldFilePath) && fs.unlinkSync(oldFilePath);
+    }
+  }
+
+  // Upload image baru jika ada
+  let image_url = oldData.image_url;
+  const newImage = formData.get("image") as File;
+  if (newImage) {
+    const storagePath = path.join(process.cwd(), "public", "storage");
+    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
+    const imageName = `${uuidv4()}-${newImage.name}`;
+    const imagePath = path.join(storagePath, imageName);
+    fs.writeFileSync(imagePath, Buffer.from(await newImage.arrayBuffer()));
+    image_url = `/storage/${imageName}`;
+
+    // hapus image lama
+    if (oldData.image_url) {
+      const oldImagePath = path.join(process.cwd(), "public", oldData.image_url.replace("/storage/", "storage/"));
+      fs.existsSync(oldImagePath) && fs.unlinkSync(oldImagePath);
+    }
+  }
 
   const { data, error } = await supabase
     .from("projects")
-    .update({ title, description, file_url, image_url, tags, type, language, sort })
+    .update({ title, description, tags, type, language, sort, file_url, image_url })
     .eq("id", id)
     .eq("admin_id", session.user.id)
     .select();
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json(data[0]);
 }
+
 
 // DELETE project + files
 export async function DELETE(req: NextRequest) {

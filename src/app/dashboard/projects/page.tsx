@@ -140,62 +140,38 @@ export default function ProjectsPage() {
   }
 
   async function handleSubmit() {
-    if (editingId) {
-      // PATCH - Update metadata only (no file uploads)
-      const res = await fetch("/api/projects", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          id: editingId,
-          title,
-          description,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-          type: selectedTypes,
-          language: selectedLanguages,
-          sort,
-          file_url: "",
-          image_url: "",
-        }),
-      });
-
-      if (!res.ok) {
-        toast.error("Failed to update project");
-        console.error("Update error:", await res.json());
-        return;
-      }
-      toast.success("Project updated successfully");
-    } else {
-      // POST - Create new project with files
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("tags", tags);
-      formData.append("type", selectedTypes.join(","));
-      formData.append("language", selectedLanguages.join(","));
-      formData.append("sort", sort);
-      
-      if (fileFile) formData.append("file", fileFile);
-      if (imageFile) formData.append("image", imageFile);
-
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        toast.error("Failed to create project");
-        console.error("Create error:", await res.json());
-        return;
-      }
-      toast.success("Project created successfully");
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("tags", tags);
+    formData.append("type", selectedTypes.join(","));
+    formData.append("language", selectedLanguages.join(","));
+    formData.append("sort", sort);
+  
+    // Jika file/image baru dipilih
+    if (fileFile) formData.append("file", fileFile);
+    if (imageFile) formData.append("image", imageFile);
+  
+    if (editingId) formData.append("id", editingId);
+  
+    const res = await fetch("/api/projects", {
+      method: editingId ? "PATCH" : "POST",
+      body: formData,
+      credentials: "include",
+    });
+  
+    if (!res.ok) {
+      toast.error(editingId ? "Failed to update project" : "Failed to create project");
+      console.error(await res.json());
+      return;
     }
-
+  
+    toast.success(editingId ? "Project updated successfully" : "Project created successfully");
     resetForm();
     setIsOpen(false);
     fetchProjects();
   }
+  
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this project?")) return;
