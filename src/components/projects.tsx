@@ -1,16 +1,8 @@
 "use client";
 
-// Impor komponen yang diperlukan dari shadcn/ui dan pustaka lainnya
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
@@ -26,9 +18,6 @@ import {
   Instagram,
   Music,
   Play,
-  Star,
-  GitFork,
-  MoreVertical,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -36,7 +25,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 
-// Definisi tipe data untuk proyek dan status unduhan
+// Definisi tipe data
 interface ProjectFile {
   id: string;
   name: string;
@@ -48,12 +37,13 @@ interface ProjectFile {
   image_url?: string;
   file_url?: string;
 }
+
 interface DownloadStatus {
   project_id: string;
   status: "pending" | "approved" | "rejected";
 }
 
-// Fungsi helper untuk memberikan warna pada tag bahasa
+// Helper function untuk warna language
 const languageColor = (lang?: string): string => {
   const normalized = lang?.toLowerCase().trim();
   switch (normalized) {
@@ -100,7 +90,6 @@ const languageColor = (lang?: string): string => {
 };
 
 export default function Projects() {
-  // State management dan hooks (tidak ada perubahan fungsi)
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -140,7 +129,7 @@ export default function Projects() {
   });
   const allCompleted = Object.values(requirements).every(Boolean);
 
-  // Efek untuk mengambil data proyek saat komponen dimuat
+  // Fetch data
   useEffect(() => {
     async function fetchData() {
       try {
@@ -155,7 +144,7 @@ export default function Projects() {
           uploadDate: project.created_at,
           description: project.description ?? "",
           tags: project.tags ?? [],
-          downloadCount: project.downloadCount ?? 0,
+          downloadCount: project.download_count ?? 0,
           image_url: project.image_url,
           file_url: project.file_url,
         }));
@@ -198,28 +187,22 @@ export default function Projects() {
     fetchData();
   }, [session]);
 
-  // Handler untuk klik nama project
   const handleProjectClick = (fileId: string) => {
     const currentCount = clickCount[fileId] || 0;
 
     if (currentCount === 0) {
-      // Klik pertama: buka popover gambar
       setImagePopoverOpen(fileId);
       setClickCount({ ...clickCount, [fileId]: 1 });
-
-      // Reset click count setelah 500ms
       setTimeout(() => {
         setClickCount((prev) => ({ ...prev, [fileId]: 0 }));
       }, 500);
     } else if (currentCount === 1) {
-      // Klik kedua: navigasi ke detail
       router.push(`/projects/${fileId}`);
       setClickCount({ ...clickCount, [fileId]: 0 });
       setImagePopoverOpen(null);
     }
   };
 
-  // Handler untuk meminta unduhan (fungsi tidak diubah)
   const handleRequestDownload = async (
     fileId: string,
     e?: React.MouseEvent
@@ -250,20 +233,41 @@ export default function Projects() {
     }
   };
 
-  // Handler untuk unduhan final setelah syarat terpenuhi (fungsi tidak diubah)
-  const handleFinalDownload = async (fileUrl: string, filename: string) => {
+  const handleFinalDownload = async (
+    fileUrl: string,
+    filename: string,
+    projectId: string
+  ) => {
     try {
       if (!allCompleted) {
         toast.error("Selesaikan semua persyaratan terlebih dahulu");
         return;
       }
+
+      // Panggil endpoint /api/projects/[id]
+      const response = await fetch(`/api/projects/${projectId}`);
+
+      if (!response.ok) throw new Error("Gagal mengunduh file");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = fileUrl;
+      link.href = url;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
       toast.success("Download dimulai!");
+
+      setRequirements({ instagram: false, tiktok: false, youtube: false });
+      setSelectedFile(null);
+
+      setClickCount((prev) => ({
+        ...prev,
+        [projectId]: (prev[projectId] || 0) + 1,
+      }));
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
     } catch (err: any) {
@@ -271,11 +275,9 @@ export default function Projects() {
     }
   };
 
-  // Fungsi untuk merender ikon dan popover download
   const getDownloadButton = (file: ProjectFile) => {
     const downloadStatus = downloadStatuses[file.id];
 
-    // Jika belum ada status, tampilkan tombol request
     if (!downloadStatus) {
       return (
         <Button
@@ -295,7 +297,6 @@ export default function Projects() {
       );
     }
 
-    // Status pending
     if (downloadStatus.status === "pending") {
       return (
         <Popover>
@@ -325,7 +326,6 @@ export default function Projects() {
       );
     }
 
-    // Status rejected
     if (downloadStatus.status === "rejected") {
       return (
         <Popover>
@@ -355,7 +355,6 @@ export default function Projects() {
       );
     }
 
-    // Status approved
     if (downloadStatus.status === "approved") {
       return (
         <Popover
@@ -420,7 +419,6 @@ export default function Projects() {
                                 is_followed: true,
                               }),
                             });
-                            // Buka link di tab baru
                             window.open(url!, "_blank", "noopener,noreferrer");
                           }
                         }}
@@ -438,7 +436,11 @@ export default function Projects() {
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleFinalDownload(file.file_url || "", file.name);
+                    handleFinalDownload(
+                      file.file_url || "",
+                      file.name,
+                      file.id
+                    );
                   }}
                   disabled={!allCompleted}
                   className="w-full"
@@ -464,7 +466,6 @@ export default function Projects() {
     return null;
   };
 
-  // Tampilan loading state dengan komponen Skeleton
   if (loading) {
     return (
       <section className="space-y-6">
@@ -478,10 +479,9 @@ export default function Projects() {
     );
   }
 
-  // Tampilan utama komponen
   return (
     <section className="space-y-6">
-      {/* Header Card dengan style GitHub */}
+      {/* Header Card */}
       <Card className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-normal text-slate-700 dark:text-slate-200">
@@ -505,21 +505,22 @@ export default function Projects() {
 
       {/* Header untuk Pinned Projects */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-normal text-slate-700">Pinned</h3>
+        <h3 className="text-base font-normal text-slate-700 dark:text-slate-300">
+          Pinned
+        </h3>
         <Link href="#" className="text-sm text-blue-600 hover:underline">
           Customize your pins
         </Link>
       </div>
 
-      {/* Grid Projects dengan style GitHub - 2 kolom persegi panjang */}
+      {/* Grid Projects */}
       <div className="grid gap-4 md:grid-cols-2">
         {files.map((file) => (
           <Card
             key={file.id}
-            className="flex flex-col border-slate-300 hover:border-slate-400 transition-colors"
+            className="flex flex-col border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-colors"
           >
             <div className="p-4 space-y-3">
-              {/* Header dengan title dan badge */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <FileText className="h-4 w-4 text-slate-500 flex-shrink-0" />
@@ -532,7 +533,7 @@ export default function Projects() {
                     >
                       <PopoverTrigger asChild>
                         <span
-                          className="font-semibold text-blue-600 hover:underline truncate cursor-pointer text-sm"
+                          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
                           onClick={(e) => {
                             e.preventDefault();
                             handleProjectClick(file.id);
@@ -552,7 +553,7 @@ export default function Projects() {
                   ) : (
                     <Link
                       href={`/projects/${file.id}`}
-                      className="font-semibold text-blue-600 hover:underline truncate cursor-pointer text-sm"
+                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
                     >
                       {file.name}
                     </Link>
@@ -563,10 +564,10 @@ export default function Projects() {
                     variant="outline"
                     className={`text-xs flex-shrink-0 ${
                       downloadStatuses[file.id].status === "pending"
-                        ? "border-amber-300 text-amber-600 bg-amber-50"
+                        ? "border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950"
                         : downloadStatuses[file.id].status === "approved"
-                        ? "border-emerald-300 text-emerald-600 bg-emerald-50"
-                        : "border-red-300 text-red-600 bg-red-50"
+                        ? "border-emerald-300 text-emerald-600 bg-emerald-50 dark:bg-emerald-950"
+                        : "border-red-300 text-red-600 bg-red-50 dark:bg-red-950"
                     }`}
                   >
                     {downloadStatuses[file.id].status === "pending"
@@ -578,13 +579,11 @@ export default function Projects() {
                 )}
               </div>
 
-              {/* Description */}
-              <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
+              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[32px]">
                 {file.description || "No description available"}
               </p>
 
-              {/* Footer dengan language dan actions */}
-              <div className="flex w-full items-center justify-between text-xs text-slate-600">
+              <div className="flex w-full items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                 <div className="flex items-center gap-2">
                   {file.tags && file.tags.length > 0 && (
                     <>
@@ -599,12 +598,11 @@ export default function Projects() {
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1" title="Stars">
-                    <Star className="h-4 w-4" />
-                    <span>{file.downloadCount ?? 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1" title="Forks">
-                    <GitFork className="h-4 w-4" />
+                  <div
+                    className="flex items-center gap-1"
+                    title="Download Count"
+                  >
+                    <Download className="h-4 w-4" />
                     <span>{file.downloadCount ?? 0}</span>
                   </div>
                   {getDownloadButton(file)}
@@ -619,10 +617,10 @@ export default function Projects() {
       {files.length === 0 && !loading && (
         <div className="py-20 text-center">
           <FileText className="mx-auto h-12 w-12 text-slate-400" />
-          <h3 className="mt-2 text-xl font-semibold text-slate-700">
+          <h3 className="mt-2 text-xl font-semibold text-slate-700 dark:text-slate-300">
             Belum Ada Proyek
           </h3>
-          <p className="text-slate-500">
+          <p className="text-slate-500 dark:text-slate-400">
             Proyek yang diunggah akan muncul di sini.
           </p>
         </div>

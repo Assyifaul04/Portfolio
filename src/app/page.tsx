@@ -10,24 +10,26 @@ import ProfileCard from "@/components/profile-card";
 import About from "@/components/about";
 import Contact from "@/components/contact";
 import Projects from "@/components/projects";
-import FilterCard, { FilterState } from "@/components/filter-card";
+import FilterCard, { FilterState as FilterCardState } from "@/components/filter-card";
 import TableCard from "@/components/table-card";
 import { toast } from "sonner";
 
-// Interface untuk project
+// Interface untuk project, disesuaikan dengan database
 interface ProjectFile {
   id: string;
-  name: string;
-  size: number;
-  uploadDate: string;
+  name: string; // dari 'title'
+  uploadDate: string; // dari 'created_at'
   description?: string;
   tags?: string[];
   downloadCount?: number;
   image_url?: string;
   file_url?: string;
-  category?: string;
-  status?: "completed" | "ongoing" | "planned";
+  type?: string[]; // Sesuai dengan database
+  language?: string[]; // Sesuai dengan database
 }
+
+// Menggunakan tipe FilterState dari FilterCard untuk konsistensi
+type FilterState = FilterCardState;
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,14 +37,16 @@ export default function HomePage() {
   const [showDetailView, setShowDetailView] = useState(false);
   const [allProjects, setAllProjects] = useState<ProjectFile[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectFile[]>([]);
+  
+  // Inisialisasi state filters agar sesuai dengan FilterCard.tsx
   const [filters, setFilters] = useState<FilterState>({
     search: "",
-    category: "all",
-    status: "all",
-    sortBy: "newest",
+    type: "All",
+    language: "All",
+    sortBy: "Last updated",
   });
 
-  // Check session
+  // Check session (tidak ada perubahan)
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -70,7 +74,7 @@ export default function HomePage() {
     checkSession();
   }, [router]);
 
-  // Fetch projects
+  // Fetch projects (pemetaan data diperbaiki)
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -78,18 +82,17 @@ export default function HomePage() {
         if (!res.ok) throw new Error("Gagal mengambil data proyek");
         const projects = await res.json();
         
-        const transformed = projects.map((project: any) => ({
+        const transformed: ProjectFile[] = projects.map((project: any) => ({
           id: project.id,
           name: project.title,
-          size: project.file_url ? 1024 * 1024 * 5 : 0,
           uploadDate: project.created_at,
           description: project.description ?? "",
           tags: project.tags ?? [],
-          downloadCount: project.downloadCount ?? 0,
+          downloadCount: project.download_count ?? 0, // sesuaikan nama kolom
           image_url: project.image_url,
           file_url: project.file_url,
-          category: project.category || "other",
-          status: project.status || "completed",
+          type: project.type ?? [], // Gunakan kolom 'type' dari DB
+          language: project.language ?? [], // Gunakan kolom 'language' dari DB
         }));
         
         setAllProjects(transformed);
@@ -104,7 +107,7 @@ export default function HomePage() {
     }
   }, [showDetailView]);
 
-  // Apply filters
+  // Apply filters (logika filter dan sorting diperbaiki)
   useEffect(() => {
     let result = [...allProjects];
 
@@ -116,31 +119,30 @@ export default function HomePage() {
       );
     }
 
-    // Category filter
-    if (filters.category !== "all") {
-      result = result.filter((project) => project.category === filters.category);
+    // Type filter
+    if (filters.type !== "All") {
+      result = result.filter((project) => 
+        project.type?.includes(filters.type)
+      );
     }
 
-    // Status filter
-    if (filters.status !== "all") {
-      result = result.filter((project) => project.status === filters.status);
+    // Language filter
+    if (filters.language !== "All") {
+      result = result.filter((project) =>
+        project.language?.includes(filters.language)
+      );
     }
 
     // Sort
     switch (filters.sortBy) {
-      case "newest":
+      case "Last updated":
+      case "Recently created":
         result.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
         break;
-      case "oldest":
-        result.sort((a, b) => new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime());
-        break;
-      case "name-asc":
+      case "Name":
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case "name-desc":
-        result.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "popular":
+      case "Stars": // Diasumsikan 'Stars' sama dengan 'downloadCount'
         result.sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0));
         break;
     }
