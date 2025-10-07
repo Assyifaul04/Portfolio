@@ -16,15 +16,15 @@ import {
   Download,
   FileText,
   Instagram,
+  Loader2,
   Music,
   Play,
-  Loader2,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import Link from "next/link";
 
 // Definisi tipe data
 interface ProjectFile {
@@ -130,24 +130,6 @@ export default function Projects() {
     youtube: false,
   });
   const allCompleted = Object.values(requirements).every(Boolean);
-
-  // Inject CSS untuk animasi
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes downloadProgress {
-        0% { width: 0%; }
-        100% { width: 100%; }
-      }
-      .animate-download-progress {
-        animation: downloadProgress 2s ease-in-out;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   // Fetch data
   useEffect(() => {
@@ -266,13 +248,8 @@ export default function Projects() {
 
       setDownloading(projectId);
 
-      // Toast loading dengan animasi download
-      const toastId = toast.loading(
-        <div className="flex items-center gap-2">
-          <Download className="h-4 w-4 animate-bounce" />
-          <span>Mengunduh file...</span>
-        </div>
-      );
+      // Toast loading
+      const toastId = toast.loading("Mengunduh file...");
 
       // Simulasi delay untuk animasi
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -294,13 +271,17 @@ export default function Projects() {
       window.URL.revokeObjectURL(url);
 
       // Update toast menjadi success
-      toast.success(
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Download berhasil!</span>
-        </div>,
-        { id: toastId }
-      );
+      toast.success("Download berhasil!", { id: toastId });
+
+      // Set notification for navbar
+      if (session?.user?.email) {
+        localStorage.setItem(
+          `download_notification_${session.user.email}`,
+          "true"
+        );
+        // Trigger storage event untuk update navbar
+        window.dispatchEvent(new Event("storage"));
+      }
 
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
@@ -325,10 +306,10 @@ export default function Projects() {
             e.preventDefault();
             handleRequestDownload(file.id, e);
           }}
-          title="Request Download"
+          title="Download"
         >
           <Download className="h-4 w-4 mr-1" />
-          <span className="text-xs">Request</span>
+          <span className="text-xs">Download</span>
         </Button>
       );
     }
@@ -420,7 +401,7 @@ export default function Projects() {
               title="Download Disetujui - Klik untuk mulai"
             >
               <CheckCircle2 className="h-4 w-4 mr-1" />
-              <span className="text-xs">Approved</span>
+              <span className="text-xs">download</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -487,14 +468,13 @@ export default function Projects() {
                     );
                   }}
                   disabled={!allCompleted || downloading === file.id}
-                  className="w-full relative overflow-hidden"
+                  className="w-full"
                   size="sm"
                 >
                   {downloading === file.id ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <span>Downloading...</span>
-                      <div className="absolute bottom-0 left-0 h-1 bg-emerald-400 animate-download-progress" />
                     </>
                   ) : allCompleted ? (
                     <>

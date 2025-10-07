@@ -15,7 +15,7 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun } from "lucide-react";
+import { Menu, Moon, Sun, Bell } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -38,6 +38,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasNewDownload, setHasNewDownload] = useState(false);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
@@ -45,6 +46,24 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check for download notification
+  useEffect(() => {
+    if (session?.user?.email) {
+      const checkNotification = () => {
+        const stored = localStorage.getItem(
+          `download_notification_${session.user.email}`
+        );
+        setHasNewDownload(stored === "true");
+      };
+
+      checkNotification();
+
+      // Listen for storage events
+      window.addEventListener("storage", checkNotification);
+      return () => window.removeEventListener("storage", checkNotification);
+    }
+  }, [session]);
 
   // Scroll effect
   useEffect(() => {
@@ -76,6 +95,10 @@ export default function Navbar() {
   }, [session]);
 
   const handleLogout = async () => {
+    // Clear notification on logout
+    if (session?.user?.email) {
+      localStorage.removeItem(`download_notification_${session.user.email}`);
+    }
     await signOut({ callbackUrl: "/auth/login" });
     setUserProfile(null);
     router.push("/auth/login");
@@ -84,32 +107,32 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
           scrolled
-            ? "bg-white/95 dark:bg-slate-950/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-sm"
+            ? "bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md shadow-sm"
             : "bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800"
         }`}
       >
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Link
                 href="/"
-                className="flex items-center text-xl font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="flex items-center text-xl font-semibold text-slate-900 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-200"
               >
                 <span>@syn_taxx</span>
               </Link>
 
               {/* Desktop Menu */}
-              <NavigationMenu className="hidden md:flex ml-4">
-                <NavigationMenuList className="flex items-center gap-2">
+              <NavigationMenu className="hidden md:flex">
+                <NavigationMenuList className="flex items-center gap-1">
                   {["about", "projects", "contact"].map((section) => (
                     <NavigationMenuItem key={section}>
                       <Button
                         asChild
                         variant="ghost"
-                        className="h-8 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md"
+                        className="h-9 px-4 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-md transition-all duration-200"
                       >
                         <Link href={`#${section}`}>
                           <span className="capitalize">{section}</span>
@@ -121,7 +144,7 @@ export default function Navbar() {
               </NavigationMenu>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Mobile Menu (Hamburger) */}
               <div className="md:hidden">
                 <Sheet>
@@ -129,7 +152,7 @@ export default function Navbar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                      className="h-9 w-9 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                     >
                       <Menu className="h-5 w-5" />
                     </Button>
@@ -143,7 +166,7 @@ export default function Navbar() {
                         <Link
                           key={section}
                           href={`#${section}`}
-                          className="px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 capitalize"
+                          className="px-4 py-2.5 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 capitalize transition-all duration-200"
                         >
                           {section}
                         </Link>
@@ -158,48 +181,54 @@ export default function Navbar() {
                 <Button
                   asChild
                   variant="default"
-                  className="h-9 px-4 text-sm font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
+                  className="h-9 px-4 text-sm font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-all duration-200"
                 >
                   <Link href="/auth/login">Login</Link>
                 </Button>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-pointer group">
-                      <Avatar className="h-8 w-8 ring-1 ring-slate-300 dark:ring-slate-700 group-hover:ring-slate-400 dark:group-hover:ring-slate-600 transition-all">
+                    <button className="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-600 rounded-full transition-all duration-200">
+                      <Avatar className="h-9 w-9 ring-2 ring-slate-200 dark:ring-slate-800 hover:ring-slate-300 dark:hover:ring-slate-700 transition-all duration-200 cursor-pointer">
                         <AvatarImage
                           src={userProfile?.avatar_url || "/avatar-placeholder.png"}
+                          className="object-cover"
                         />
-                        <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">
-                          {userProfile?.name?.[0] || "ST"}
+                        <AvatarFallback className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold">
+                          {userProfile?.name?.[0]?.toUpperCase() || "ST"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="hidden sm:inline text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                        {userProfile.name || "User"}
-                      </span>
-                    </div>
+                      {hasNewDownload && userProfile.role !== "admin" && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                          <span className="relative inline-flex items-center justify-center rounded-full h-5 w-5 bg-red-500 shadow-lg">
+                            <Bell className="h-2.5 w-2.5 text-white" />
+                          </span>
+                        </span>
+                      )}
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-56 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg"
+                    className="w-56 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg animate-in fade-in-0 zoom-in-95 duration-200"
                   >
-                    <div className="px-3 py-2">
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    <div className="px-3 py-2.5">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {userProfile.name || "User"}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">
                         {userProfile.email}
                       </p>
                     </div>
 
-                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-800" />
 
                     {userProfile.role === "admin" && (
                       <>
                         <DropdownMenuItem asChild>
                           <Link
                             href="/dashboard"
-                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer transition-colors duration-200"
                           >
                             Dashboard
                           </Link>
@@ -207,12 +236,12 @@ export default function Navbar() {
                         <DropdownMenuItem asChild>
                           <Link
                             href="/settings"
-                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer transition-colors duration-200"
                           >
                             Settings
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-800" />
                       </>
                     )}
 
@@ -221,24 +250,36 @@ export default function Navbar() {
                         <DropdownMenuItem asChild>
                           <Link
                             href="/riwayat"
-                            className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer flex items-center justify-between transition-colors duration-200"
+                            onClick={() => {
+                              // Clear notification when clicked
+                              if (session?.user?.email) {
+                                localStorage.removeItem(
+                                  `download_notification_${session.user.email}`
+                                );
+                                setHasNewDownload(false);
+                              }
+                            }}
                           >
-                            Download History
+                            <span>Download History</span>
+                            {hasNewDownload && (
+                              <span className="flex h-2 w-2 rounded-full bg-red-500" />
+                            )}
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-800" />
                       </>
                     )}
 
                     {/* Account Menu Item - Trigger Delete Dialog */}
                     <DropdownMenuItem
                       onSelect={() => setDeleteDialogOpen(true)}
-                      className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer"
+                      className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer transition-colors duration-200"
                     >
-                      Account
+                      Remove Account
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-800" />
 
                     {/* Theme Toggle */}
                     {mounted && (
@@ -247,7 +288,7 @@ export default function Navbar() {
                           e.preventDefault();
                           setTheme(theme === "dark" ? "light" : "dark");
                         }}
-                        className="text-slate-700 dark:text-slate-200 text-sm cursor-pointer flex items-center gap-2"
+                        className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer flex items-center gap-2 transition-colors duration-200"
                       >
                         {theme === "dark" ? (
                           <>
@@ -263,11 +304,11 @@ export default function Navbar() {
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-800" />
 
                     <DropdownMenuItem
                       onSelect={handleLogout}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm cursor-pointer"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 text-sm cursor-pointer transition-colors duration-200"
                     >
                       Logout
                     </DropdownMenuItem>
