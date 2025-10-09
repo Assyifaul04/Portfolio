@@ -41,11 +41,7 @@ interface DownloadItem {
   created_at: string;
 }
 
-interface DownloadsPageProps {
-  searchParams?: Record<string, string | string[]>;
-}
-
-export default function DownloadsPage({ searchParams }: DownloadsPageProps) {
+export default async function DownloadsPage({ searchParams }: { searchParams?: Record<string, string | string[]> }) {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const statusFilter = searchParams?.status ?? undefined;
