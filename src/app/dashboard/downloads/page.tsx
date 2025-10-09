@@ -1,26 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Clock, Trash2, Download, Filter } from "lucide-react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +11,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { supabase } from "@/lib/supabaseClient";
+import { CheckCircle, Clock, Download, Filter, Trash2, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface DownloadItem {
   id: string;
@@ -41,11 +41,11 @@ interface DownloadItem {
   created_at: string;
 }
 
-export default function DownloadsPage({
-  searchParams,
-}: {
-  searchParams?: { status?: string };
-}) {
+interface DownloadsPageProps {
+  searchParams?: Record<string, string | string[]>;
+}
+
+export default function DownloadsPage({ searchParams }: DownloadsPageProps) {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const statusFilter = searchParams?.status ?? undefined;

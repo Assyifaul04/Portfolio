@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
