@@ -1,102 +1,84 @@
 import GoogleProvider from "next-auth/providers/google";
 import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
-import { NextAuthOptions } from "next-auth";
 
-// Gunakan SERVICE_ROLE_KEY hanya untuk operasi admin seperti membuat user
-const supabaseAdmin = createClient(
+// Klien ini digunakan untuk operasi di sisi server (mis: sinkronisasi user)
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  // WAJIB: Gunakan strategi JWT untuk session
+  // --- TAMBAHAN ---
+  // Strategi sesi harus 'jwt' agar callback jwt bisa digunakan.
   session: {
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ user, account }) {
-      if (!user.email) return false;
+    // --- TAMBAHAN ---
+    // Callback 'jwt' dipanggil pertama kali saat sign-in.
+    // Di sinilah kita menangkap accessToken dari provider (Google).
+    async jwt({ token, account }: { token: any, account: any }) {
+      if (account) {
+        // 'account.access_token' adalah token yang diberikan oleh Google.
+        // Ini kita simpan ke dalam 'token' NextAuth.
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+    
+    // KODE LAMA ANDA (signIn): Tidak diubah, tetap berfungsi seperti sebelumnya.
+    async signIn({ user }: { user: any }) {
+      const { email, name, image } = user;
+      if (!email) return false;
 
-      // Cari atau buat user di tabel 'users' Anda
-      const { data: userData, error } = await supabaseAdmin
+      const { data } = await supabase
         .from("users")
-        .select("id, role")
-        .eq("email", user.email)
+        .select("id")
+        .eq("email", email)
         .single();
-        
-      if (error && error.code !== 'PGRST116') { // PGRST116 = baris tidak ditemukan
-        console.error("Error fetching user:", error);
-        return false;
-      }
 
-      let supabaseUserId: string;
-      let userRole: string;
-
-      if (!userData) {
-        // User baru, buat di tabel 'users'
-        const { data: newUser, error: insertError } = await supabaseAdmin
-          .from("users")
-          .insert({
-            email: user.email,
-            name: user.name,
-            avatar_url: user.image,
-            role: "user", // Default role
-          })
-          .select("id, role")
-          .single();
-
-        if (insertError || !newUser) {
-          console.error("Error creating new user:", insertError);
-          return false;
-        }
-        supabaseUserId = newUser.id;
-        userRole = newUser.role;
+      if (!data) {
+        await supabase.from("users").insert([{ email, name, avatar_url: image, role: "user" }]);
       } else {
-        // User sudah ada
-        supabaseUserId = userData.id;
-        userRole = userData.role;
+        await supabase
+          .from("users")
+          .update({ name, avatar_url: image })
+          .eq("email", email);
       }
-
-      // BUAT JWT SUPABASE SECARA MANUAL
-      const payload = {
-        aud: "authenticated",
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // Token berlaku 7 hari
-        sub: supabaseUserId,
-        email: user.email,
-        role: userRole,
-      };
-
-      const accessToken = jwt.sign(payload, process.env.SUPABASE_JWT_SECRET!);
-      
-      // Kirim token ke callback 'jwt'
-      (user as any).accessToken = accessToken;
-      (user as any).role = userRole;
 
       return true;
     },
 
-    async jwt({ token, user }) {
-      // Saat pertama kali login, 'user' object dari signIn akan ada di sini
-      if (user) {
-        token.accessToken = (user as any).accessToken;
-        token.role = (user as any).role;
+    // KODE LAMA ANDA (session): Sedikit dimodifikasi untuk menerima 'token' dari callback jwt.
+    async session({ session, token }: { session: any, token: any }) {
+      // --- TAMBAHAN ---
+      // 'token.accessToken' yang kita simpan di callback jwt sekarang
+      // kita teruskan ke objek 'session' agar bisa digunakan di client & API route.
+      if (token.accessToken) {
+        session.accessToken = token.accessToken;
       }
-      return token;
-    },
 
-    async session({ session, token }) {
-      // Ambil data dari token dan kirim ke session
-      session.accessToken = token.accessToken as string;
-      if (session.user) {
-        session.user.role = token.role as string;
+      // Bagian ini adalah kode lama Anda, tetap dipertahankan.
+      if (!session?.user?.email) return session;
+
+      const { data } = await supabase
+        .from("users")
+        .select("role, avatar_url, id")
+        .eq("email", session.user.email)
+        .single();
+
+      if (data) {
+        session.user.role = data.role;
+        session.user.id = data.id;
+        session.user.image = data.avatar_url;
       }
+
       return session;
     },
   },
