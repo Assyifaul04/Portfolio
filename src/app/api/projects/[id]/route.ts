@@ -3,8 +3,12 @@ import fs from "fs";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+// PERUBAHAN DI SINI
+export async function GET(
+  req: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params; // Ambil 'id' dari context.params
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -34,7 +38,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return new NextResponse(fileBuffer, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${path.basename(project.file_url)}"`,
+      "Content-Disposition": `attachment; filename="${path.basename(
+        project.file_url
+      )}"`,
       "Content-Length": fileBuffer.length.toString(),
     },
   });
