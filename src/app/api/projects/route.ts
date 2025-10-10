@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
-import fs from "fs";
-import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-// GET all projects
+// GET: Mengambil semua data proyek
 export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
@@ -22,178 +20,148 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST create project
+// POST: Membuat proyek baru (dengan upload file ke Supabase Storage)
 export async function POST(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
-  if (!session || session.user.role !== "admin" || !session.user.id)
+  if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const formData = await req.formData();
   const title = formData.get("title")?.toString() || "";
   const description = formData.get("description")?.toString() || "";
-  const tags = (formData.get("tags")?.toString() || "")
-    .split(",")
-    .map((t) => t.trim());
-
-  const type = (formData.get("type")?.toString() || "")
-    .split(",")
-    .map((t) => t.trim());
-
-  const language = (formData.get("language")?.toString() || "")
-    .split(",")
-    .map((l) => l.trim());
-
+  const tags = (formData.get("tags")?.toString() || "").split(",").map((t) => t.trim());
+  const type = (formData.get("type")?.toString() || "").split(",").map((t) => t.trim());
+  const language = (formData.get("language")?.toString() || "").split(",").map((l) => l.trim());
   const sort = formData.get("sort")?.toString() || "Last updated";
 
-  // Pastikan folder storage ada
-  const storagePath = path.join(process.cwd(), "public", "storage");
-  if (!fs.existsSync(storagePath))
-    fs.mkdirSync(storagePath, { recursive: true });
-
-  // Upload file
   let file_url = "";
-  const file = formData.get("file") as File;
+  let image_url = "";
+
+  // Handle upload file ke Supabase Storage
+  const file = formData.get("file") as File | null;
   if (file) {
     const fileName = `${uuidv4()}-${file.name}`;
-    const filePath = path.join(storagePath, fileName);
-    fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
-    file_url = `/storage/${fileName}`;
+    const { error } = await supabase.storage.from("project-files").upload(fileName, file);
+    if (error) return NextResponse.json({ error: `File upload failed: ${error.message}` }, { status: 500 });
+    file_url = supabase.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
   }
 
-  // Upload image
-  let image_url = "";
-  const image = formData.get("image") as File;
+  // Handle upload gambar ke Supabase Storage
+  const image = formData.get("image") as File | null;
   if (image) {
     const imageName = `${uuidv4()}-${image.name}`;
-    const imagePath = path.join(storagePath, imageName);
-    fs.writeFileSync(imagePath, Buffer.from(await image.arrayBuffer()));
-    image_url = `/storage/${imageName}`;
+    const { error } = await supabase.storage.from("project-files").upload(imageName, image);
+    if (error) return NextResponse.json({ error: `Image upload failed: ${error.message}` }, { status: 500 });
+    image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
   }
 
+  // Masukkan data ke database
   const { data, error } = await supabase
     .from("projects")
-    .insert([
-      {
-        title,
-        description,
-        tags,
-        file_url,
-        image_url,
-        admin_id: session.user.id,
-        type,
-        language,
-        sort,
-      },
-    ])
-    .select();
+    .insert([{
+      title, description, tags, type, language, sort,
+      file_url,
+      image_url,
+      admin_id: session.user.id,
+    }])
+    .select()
+    .single();
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json(data[0], { status: 201 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
 }
 
-// PATCH update project metadata
+// PATCH: Memperbarui proyek (dengan update file di Supabase Storage)
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
-  if (!session || session.user.role !== "admin" || !session.user.id)
+  if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const formData = await req.formData();
   const id = formData.get("id")?.toString();
-  const title = formData.get("title")?.toString();
-  const description = formData.get("description")?.toString();
-  const tags = (formData.get("tags")?.toString() || "").split(",").map(t => t.trim()).filter(Boolean);
-  const type = (formData.get("type")?.toString() || "").split(",").map(t => t.trim());
-  const language = (formData.get("language")?.toString() || "").split(",").map(l => l.trim());
-  const sort = formData.get("sort")?.toString() || "Last updated";
+  if (!id) return NextResponse.json({ error: "Project ID is required" }, { status: 400 });
 
-  // Ambil project lama dulu
+  // Ambil data lama untuk referensi file
   const { data: oldData, error: fetchError } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .single();
+    .from("projects").select("file_url, image_url").eq("id", id).single();
+  if (fetchError) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  if (fetchError || !oldData) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  const updatePayload: { [key: string]: any } = {
+    title: formData.get("title")?.toString(),
+    description: formData.get("description")?.toString(),
+    tags: (formData.get("tags")?.toString() || "").split(",").map(t => t.trim()),
+    type: (formData.get("type")?.toString() || "").split(",").map(t => t.trim()),
+    language: (formData.get("language")?.toString() || "").split(",").map(l => l.trim()),
+    sort: formData.get("sort")?.toString() || "Last updated",
+  };
 
-  // Upload file baru jika ada
-  let file_url = oldData.file_url;
-  const newFile = formData.get("file") as File;
+  // Handle file baru jika ada
+  const newFile = formData.get("file") as File | null;
   if (newFile) {
-    const storagePath = path.join(process.cwd(), "public", "storage");
-    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
     const fileName = `${uuidv4()}-${newFile.name}`;
-    const filePath = path.join(storagePath, fileName);
-    fs.writeFileSync(filePath, Buffer.from(await newFile.arrayBuffer()));
-    file_url = `/storage/${fileName}`;
+    const { error } = await supabase.storage.from("project-files").upload(fileName, newFile);
+    if (error) return NextResponse.json({ error: `File update failed: ${error.message}` }, { status: 500 });
+    updatePayload.file_url = supabase.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
 
-    // hapus file lama
     if (oldData.file_url) {
-      const oldFilePath = path.join(process.cwd(), "public", oldData.file_url.replace("/storage/", "storage/"));
-      fs.existsSync(oldFilePath) && fs.unlinkSync(oldFilePath);
+      const oldFileName = oldData.file_url.substring(oldData.file_url.lastIndexOf('/') + 1);
+      await supabase.storage.from("project-files").remove([oldFileName]);
     }
   }
 
-  // Upload image baru jika ada
-  let image_url = oldData.image_url;
-  const newImage = formData.get("image") as File;
+  // Handle gambar baru jika ada
+  const newImage = formData.get("image") as File | null;
   if (newImage) {
-    const storagePath = path.join(process.cwd(), "public", "storage");
-    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
     const imageName = `${uuidv4()}-${newImage.name}`;
-    const imagePath = path.join(storagePath, imageName);
-    fs.writeFileSync(imagePath, Buffer.from(await newImage.arrayBuffer()));
-    image_url = `/storage/${imageName}`;
+    const { error } = await supabase.storage.from("project-files").upload(imageName, newImage);
+    if (error) return NextResponse.json({ error: `Image update failed: ${error.message}` }, { status: 500 });
+    updatePayload.image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
 
-    // hapus image lama
     if (oldData.image_url) {
-      const oldImagePath = path.join(process.cwd(), "public", oldData.image_url.replace("/storage/", "storage/"));
-      fs.existsSync(oldImagePath) && fs.unlinkSync(oldImagePath);
+      const oldImageName = oldData.image_url.substring(oldData.image_url.lastIndexOf('/') + 1);
+      await supabase.storage.from("project-files").remove([oldImageName]);
     }
   }
 
+  // Update data di database
   const { data, error } = await supabase
-    .from("projects")
-    .update({ title, description, tags, type, language, sort, file_url, image_url })
-    .eq("id", id)
-    .eq("admin_id", session.user.id)
-    .select();
+    .from("projects").update(updatePayload).eq("id", id).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json(data[0]);
+  return NextResponse.json(data);
 }
 
-
-// DELETE project + files
+// DELETE: Menghapus proyek (termasuk file dari Supabase Storage)
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
-  if (!session || session.user.role !== "admin" || !session.user.id)
+  if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const id = new URL(req.url).searchParams.get("id");
-  if (!id)
-    return NextResponse.json({ error: "Project ID required" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
 
-  const { data, error } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", id)
-    .eq("admin_id", session.user.id)
-    .select();
+  // Ambil data URL file sebelum dihapus
+  const { data: projectData, error: fetchError } = await supabase
+    .from("projects").select("file_url, image_url").eq("id", id).single();
+  if (fetchError) return NextResponse.json({ error: "Project not found to delete" }, { status: 404 });
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  // Hapus record dari database
+  const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
 
-  // Hapus file fisik
-  if (data[0]?.file_url)
-    fs.existsSync(path.join(process.cwd(), "public", data[0].file_url.replace("/storage/", "storage/"))) &&
-      fs.unlinkSync(path.join(process.cwd(), "public", data[0].file_url.replace("/storage/", "storage/")));
+  // Hapus file dari Supabase Storage
+  if (projectData.file_url) {
+    const fileName = projectData.file_url.substring(projectData.file_url.lastIndexOf('/') + 1);
+    await supabase.storage.from("project-files").remove([fileName]);
+  }
 
-  if (data[0]?.image_url)
-    fs.existsSync(path.join(process.cwd(), "public", data[0].image_url.replace("/storage/", "storage/"))) &&
-      fs.unlinkSync(path.join(process.cwd(), "public", data[0].image_url.replace("/storage/", "storage/")));
+  if (projectData.image_url) {
+    const imageName = projectData.image_url.substring(projectData.image_url.lastIndexOf('/') + 1);
+    await supabase.storage.from("project-files").remove([imageName]);
+  }
 
-  return NextResponse.json({ message: "Project deleted", project: data[0] });
+  return NextResponse.json({ message: "Project deleted successfully" });
 }
