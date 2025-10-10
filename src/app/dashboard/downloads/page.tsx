@@ -151,8 +151,7 @@ export default function DownloadsPage() {
     approved: downloads.filter(d => d.status === "approved").length,
     rejected: downloads.filter(d => d.status === "rejected").length,
   };
-  
-  // Seluruh bagian JSX untuk tampilan tidak perlu diubah
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -160,7 +159,7 @@ export default function DownloadsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Manajemen Download</h1>
           <p className="text-muted-foreground mt-1">
-            Kelola permintaan download dari pengguna
+            Kelola permintaan pengguna di list ini
           </p>
         </div>
         <Download className="h-8 w-8 text-muted-foreground" />
