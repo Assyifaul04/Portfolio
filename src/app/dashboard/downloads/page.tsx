@@ -1,5 +1,10 @@
 "use client";
 
+// PERUBAHAN 1: Import hook useSearchParams
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+// Import komponen UI dan library lainnya (tidak ada perubahan di sini)
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,9 +35,9 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabaseClient";
 import { CheckCircle, Clock, Download, Filter, Trash2, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+// Interface data (tidak ada perubahan)
 interface DownloadItem {
   id: string;
   users: { email: string };
@@ -41,31 +46,40 @@ interface DownloadItem {
   created_at: string;
 }
 
-export default async function DownloadsPage({ searchParams }: { searchParams?: Record<string, string | string[]> }) {
+// PERUBAHAN 2: Hapus 'async' dari deklarasi fungsi dan hapus props
+export default function DownloadsPage() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const statusFilter = searchParams?.status ?? undefined;
+
+  // PERUBAHAN 3: Gunakan hook untuk mendapatkan searchParams dan nilai filternya
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get("status");
 
   const fetchDownloads = async () => {
     setLoading(true);
     try {
       let query = supabase.from("downloads").select("*, users(*), projects(*)");
-      if (statusFilter) query = query.eq("status", statusFilter);
+      
+      // Logika filter tetap sama, sudah benar
+      if (statusFilter) {
+        query = query.eq("status", statusFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
       setDownloads(data ?? []);
-      setLoading(false);
     } catch (err: any) {
-      toast.error("Gagal fetch downloads: " + err.message);
+      toast.error("Gagal mengambil data downloads: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchDownloads();
-  }, [statusFilter]);
+  }, [statusFilter]); // Re-fetch data saat filter status berubah
 
+  // Semua fungsi handler di bawah ini sudah benar dan tidak perlu diubah
   const handleUpdateStatus = async (
     id: string,
     status: "approved" | "rejected"
@@ -79,7 +93,7 @@ export default async function DownloadsPage({ searchParams }: { searchParams?: R
       toast.success(`Download ${status === "approved" ? "disetujui" : "ditolak"}`);
       fetchDownloads();
     } catch (err: any) {
-      toast.error("Gagal update: " + err.message);
+      toast.error("Gagal update status: " + err.message);
     }
   };
 
@@ -93,7 +107,7 @@ export default async function DownloadsPage({ searchParams }: { searchParams?: R
       toast.success("Download berhasil dihapus");
       fetchDownloads();
     } catch (err: any) {
-      toast.error("Gagal menghapus: " + err.message);
+      toast.error("Gagal menghapus data: " + err.message);
     }
   };
 
@@ -108,6 +122,7 @@ export default async function DownloadsPage({ searchParams }: { searchParams?: R
     );
   }
 
+  // Semua fungsi helper dan kalkulasi di bawah ini sudah benar
   const getBadgeVariant = (status: string) => {
     switch (status) {
       case "approved":
@@ -136,7 +151,8 @@ export default async function DownloadsPage({ searchParams }: { searchParams?: R
     approved: downloads.filter(d => d.status === "approved").length,
     rejected: downloads.filter(d => d.status === "rejected").length,
   };
-
+  
+  // Seluruh bagian JSX untuk tampilan tidak perlu diubah
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
