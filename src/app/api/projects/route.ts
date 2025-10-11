@@ -35,9 +35,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session || !session.user?.id) {
-      return NextResponse.json({ error: "Unauthorized", session }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const supabase = createAuthenticatedSupabaseClient(session);
@@ -45,19 +44,12 @@ export async function POST(req: NextRequest) {
 
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || "";
-    const tags = (formData.get("tags")?.toString() || "")
-      .split(",")
-      .map((t) => t.trim());
-    const type = (formData.get("type")?.toString() || "")
-      .split(",")
-      .map((t) => t.trim());
-    const language = (formData.get("language")?.toString() || "")
-      .split(",")
-      .map((l) => l.trim());
+    const tags = (formData.get("tags")?.toString() || "").split(",").map(t => t.trim());
+    const type = (formData.get("type")?.toString() || "").split(",").map(t => t.trim());
+    const language = (formData.get("language")?.toString() || "").split(",").map(l => l.trim());
     const sort = formData.get("sort")?.toString() || "Last updated";
 
-    let file_url = "";
-    let image_url = "";
+    let file_url = "", image_url = "";
 
     // Upload file utama
     const file = formData.get("file") as File | null;
@@ -77,22 +69,20 @@ export async function POST(req: NextRequest) {
       image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
     }
 
-    // Simpan ke tabel projects
+    // Insert ke tabel projects
     const { data, error } = await supabase
       .from("projects")
-      .insert([
-        {
-          title,
-          description,
-          tags,
-          type,
-          language,
-          sort,
-          file_url,
-          image_url,
-          admin_id: session.user.id,
-        },
-      ])
+      .insert([{
+        title,
+        description,
+        tags,
+        type,
+        language,
+        sort,
+        file_url,
+        image_url,
+        admin_id: session.user.id,
+      }])
       .select()
       .single();
 
@@ -100,12 +90,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data, { status: 201 });
   } catch (error: any) {
     console.error("POST Error:", error);
-    return NextResponse.json(
-      { error: error.message, stack: error.stack },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 
 // ========================
 // PATCH: Update project
