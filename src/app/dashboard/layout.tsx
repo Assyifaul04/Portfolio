@@ -15,7 +15,7 @@ export default function DashboardLayout({
   const { data: session } = useSession();
 
   if (!session) {
-    redirect("/login");
+    redirect("/auth/login");
   }
 
   if (session.user.role !== "admin") {

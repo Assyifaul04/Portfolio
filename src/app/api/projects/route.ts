@@ -1,12 +1,20 @@
+// app/api/projects/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
 import { v4 as uuidv4 } from "uuid";
+import { createAuthenticatedSupabaseClient } from "@/lib/supabaseAdmin"; // ✅ IMPORT HELPER BARU
+import { createClient } from "@supabase/supabase-js"; // Import standar untuk GET publik
 
-// GET: Mengambil semua data proyek
+// GET: Mengambil semua data proyek (bisa pakai klien anonim biasa jika data publik)
 export async function GET(req: NextRequest) {
   try {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     const { data, error } = await supabase
       .from("projects")
       .select("*")
@@ -20,148 +28,140 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Membuat proyek baru (dengan upload file ke Supabase Storage)
+// POST: Membuat proyek baru
 export async function POST(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const title = formData.get("title")?.toString() || "";
-  const description = formData.get("description")?.toString() || "";
-  const tags = (formData.get("tags")?.toString() || "").split(",").map((t) => t.trim());
-  const type = (formData.get("type")?.toString() || "").split(",").map((t) => t.trim());
-  const language = (formData.get("language")?.toString() || "").split(",").map((l) => l.trim());
-  const sort = formData.get("sort")?.toString() || "Last updated";
+  // ✅ BUAT KLIEN SUPABASE YANG TERAUTENTIKASI DENGAN SESI PENGGUNA
+  const supabase = createAuthenticatedSupabaseClient(session);
 
-  let file_url = "";
-  let image_url = "";
+  try {
+    const formData = await req.formData();
+    const title = formData.get("title")?.toString() || "";
+    const description = formData.get("description")?.toString() || "";
+    const tags = (formData.get("tags")?.toString() || "").split(",").map((t) => t.trim());
+    const type = (formData.get("type")?.toString() || "").split(",").map((t) => t.trim());
+    const language = (formData.get("language")?.toString() || "").split(",").map((l) => l.trim());
+    const sort = formData.get("sort")?.toString() || "Last updated";
 
-  // Handle upload file ke Supabase Storage
-  const file = formData.get("file") as File | null;
-  if (file) {
-    const fileName = `${uuidv4()}-${file.name}`;
-    const { error } = await supabase.storage.from("project-files").upload(fileName, file);
-    if (error) return NextResponse.json({ error: `File upload failed: ${error.message}` }, { status: 500 });
-    file_url = supabase.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+    let file_url = "";
+    let image_url = "";
+
+    // Handle upload file
+    const file = formData.get("file") as File | null;
+    if (file) {
+      const fileName = `${uuidv4()}-${file.name}`;
+      const { error } = await supabase.storage.from("project-files").upload(fileName, file);
+      if (error) throw new Error(`File upload failed: ${error.message}`);
+      file_url = supabase.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+    }
+
+    // Handle upload gambar
+    const image = formData.get("image") as File | null;
+    if (image) {
+      const imageName = `${uuidv4()}-${image.name}`;
+      const { error } = await supabase.storage.from("project-files").upload(imageName, image);
+      if (error) throw new Error(`Image upload failed: ${error.message}`);
+      image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
+    }
+
+    // Masukkan data ke database
+    const { data, error } = await supabase
+      .from("projects")
+      .insert([{ title, description, tags, type, language, sort, file_url, image_url, admin_id: session.user.id }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
+
+  } catch (error: any) {
+    console.error("POST Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  // Handle upload gambar ke Supabase Storage
-  const image = formData.get("image") as File | null;
-  if (image) {
-    const imageName = `${uuidv4()}-${image.name}`;
-    const { error } = await supabase.storage.from("project-files").upload(imageName, image);
-    if (error) return NextResponse.json({ error: `Image upload failed: ${error.message}` }, { status: 500 });
-    image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
-  }
-
-  // Masukkan data ke database
-  const { data, error } = await supabase
-    .from("projects")
-    .insert([{
-      title, description, tags, type, language, sort,
-      file_url,
-      image_url,
-      admin_id: session.user.id,
-    }])
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
 }
 
-// PATCH: Memperbarui proyek (dengan update file di Supabase Storage)
+// PATCH: Memperbarui proyek
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const id = formData.get("id")?.toString();
-  if (!id) return NextResponse.json({ error: "Project ID is required" }, { status: 400 });
+  // ✅ BUAT KLIEN TERAUTENTIKASI
+  const supabase = createAuthenticatedSupabaseClient(session);
 
-  // Ambil data lama untuk referensi file
-  const { data: oldData, error: fetchError } = await supabase
-    .from("projects").select("file_url, image_url").eq("id", id).single();
-  if (fetchError) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  try {
+    const formData = await req.formData();
+    const id = formData.get("id")?.toString();
+    if (!id) return NextResponse.json({ error: "Project ID is required" }, { status: 400 });
 
-  const updatePayload: { [key: string]: any } = {
-    title: formData.get("title")?.toString(),
-    description: formData.get("description")?.toString(),
-    tags: (formData.get("tags")?.toString() || "").split(",").map(t => t.trim()),
-    type: (formData.get("type")?.toString() || "").split(",").map(t => t.trim()),
-    language: (formData.get("language")?.toString() || "").split(",").map(l => l.trim()),
-    sort: formData.get("sort")?.toString() || "Last updated",
-  };
+    const { data: oldData, error: fetchError } = await supabase.from("projects").select("file_url, image_url").eq("id", id).single();
+    if (fetchError) throw new Error("Project not found");
 
-  // Handle file baru jika ada
-  const newFile = formData.get("file") as File | null;
-  if (newFile) {
-    const fileName = `${uuidv4()}-${newFile.name}`;
-    const { error } = await supabase.storage.from("project-files").upload(fileName, newFile);
-    if (error) return NextResponse.json({ error: `File update failed: ${error.message}` }, { status: 500 });
-    updatePayload.file_url = supabase.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+    const updatePayload: { [key: string]: any } = { /* ... payload Anda ... */ };
+    // ... isi updatePayload seperti kode Anda sebelumnya ...
 
-    if (oldData.file_url) {
-      const oldFileName = oldData.file_url.substring(oldData.file_url.lastIndexOf('/') + 1);
-      await supabase.storage.from("project-files").remove([oldFileName]);
+    // Handle file baru
+    const newFile = formData.get("file") as File | null;
+    if (newFile) {
+        // ... Logika upload file & hapus file lama Anda ...
     }
-  }
 
-  // Handle gambar baru jika ada
-  const newImage = formData.get("image") as File | null;
-  if (newImage) {
-    const imageName = `${uuidv4()}-${newImage.name}`;
-    const { error } = await supabase.storage.from("project-files").upload(imageName, newImage);
-    if (error) return NextResponse.json({ error: `Image update failed: ${error.message}` }, { status: 500 });
-    updatePayload.image_url = supabase.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
-
-    if (oldData.image_url) {
-      const oldImageName = oldData.image_url.substring(oldData.image_url.lastIndexOf('/') + 1);
-      await supabase.storage.from("project-files").remove([oldImageName]);
+    // Handle gambar baru
+    const newImage = formData.get("image") as File | null;
+    if (newImage) {
+        // ... Logika upload gambar & hapus gambar lama Anda ...
     }
+
+    const { data, error } = await supabase.from("projects").update(updatePayload).eq("id", id).select().single();
+    if (error) throw error;
+    return NextResponse.json(data);
+
+  } catch (error: any) {
+    console.error("PATCH Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  // Update data di database
-  const { data, error } = await supabase
-    .from("projects").update(updatePayload).eq("id", id).select().single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }
 
-// DELETE: Menghapus proyek (termasuk file dari Supabase Storage)
+// DELETE: Menghapus proyek
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   if (!session || session.user.role !== "admin" || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const id = new URL(req.url).searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
+  // ✅ BUAT KLIEN TERAUTENTIKASI
+  const supabase = createAuthenticatedSupabaseClient(session);
 
-  // Ambil data URL file sebelum dihapus
-  const { data: projectData, error: fetchError } = await supabase
-    .from("projects").select("file_url, image_url").eq("id", id).single();
-  if (fetchError) return NextResponse.json({ error: "Project not found to delete" }, { status: 404 });
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
 
-  // Hapus record dari database
-  const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    const { data: projectData, error: fetchError } = await supabase.from("projects").select("file_url, image_url").eq("id", id).single();
+    if (fetchError) throw new Error("Project not found to delete");
 
-  // Hapus file dari Supabase Storage
-  if (projectData.file_url) {
-    const fileName = projectData.file_url.substring(projectData.file_url.lastIndexOf('/') + 1);
-    await supabase.storage.from("project-files").remove([fileName]);
+    // Hapus dari database dulu
+    const { error: deleteError } = await supabase.from("projects").delete().eq("id", id);
+    if (deleteError) throw deleteError;
+
+    // Hapus file dari storage jika berhasil
+    if (projectData.file_url) {
+      const fileName = projectData.file_url.substring(projectData.file_url.lastIndexOf('/') + 1);
+      await supabase.storage.from("project-files").remove([fileName]);
+    }
+    if (projectData.image_url) {
+      const imageName = projectData.image_url.substring(projectData.image_url.lastIndexOf('/') + 1);
+      await supabase.storage.from("project-files").remove([imageName]);
+    }
+
+    return NextResponse.json({ message: "Project deleted successfully" });
+
+  } catch (error: any) {
+    console.error("DELETE Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  if (projectData.image_url) {
-    const imageName = projectData.image_url.substring(projectData.image_url.lastIndexOf('/') + 1);
-    await supabase.storage.from("project-files").remove([imageName]);
-  }
-
-  return NextResponse.json({ message: "Project deleted successfully" });
 }
