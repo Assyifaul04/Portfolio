@@ -31,7 +31,7 @@ interface Project {
   description?: string;
   image_url?: string;
   file_url?: string;
-  download_count?: number;
+  downloadCount?: number;
   tags?: string[];
   uploadDate: string;
   type?: string[];
@@ -584,7 +584,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span className="font-medium">
-                      {project.download_count ?? 0}
+                      {project.downloadCount ?? 0}
                     </span>
                   </div>
                   <span className="text-slate-500 dark:text-slate-500">
