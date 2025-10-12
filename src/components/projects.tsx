@@ -25,6 +25,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useDownloadNotification } from "./DownloadNotificationContext";
 
 // Definisi tipe data
 interface ProjectFile {
@@ -100,6 +101,7 @@ export default function Projects() {
   const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
   const [clickCount, setClickCount] = useState<Record<string, number>>({});
   const [downloading, setDownloading] = useState<string | null>(null);
+  const { setHasNewDownload } = useDownloadNotification();
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -256,6 +258,7 @@ export default function Projects() {
 
       toast.success("Download berhasil!", { id: toastId });
       setDownloading(null);
+      setHasNewDownload(true);
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
       setDownloading(null);

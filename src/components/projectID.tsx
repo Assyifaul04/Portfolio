@@ -30,6 +30,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useDownloadNotification } from "./DownloadNotificationContext";
 
 interface ProjectDetail {
   id: string;
@@ -85,6 +86,7 @@ export default function ProjectID() {
     "none" | "pending" | "approved" | "rejected"
   >("none");
   const [showDownloadPopover, setShowDownloadPopover] = useState(false);
+  const { setHasNewDownload } = useDownloadNotification();
 
   const socialLinks = [
     {
@@ -219,9 +221,9 @@ export default function ProjectID() {
       document.body.removeChild(link);
 
       toast.success("Download dimulai!");
-      // Reset requirements setelah download berhasil
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setShowDownloadPopover(false);
+      setHasNewDownload(true);
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
     }
