@@ -12,6 +12,7 @@ import {
   Music,
   Play,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -46,16 +47,16 @@ interface DownloadStatus {
   status: "pending" | "approved" | "rejected";
 }
 
-// Helper untuk warna language tag (tidak ada perubahan)
+// Helper untuk warna language tag
 const languageColor = (lang?: string): string => {
   const normalized = lang?.toLowerCase().trim();
   switch (normalized) {
     case "next.js":
     case "nextjs":
-      return "bg-slate-900 dark:bg-slate-100";
+      return "bg-slate-500";
     case "golang":
     case "go":
-      return "bg-cyan-500";
+      return "bg-cyan-400";
     case "typescript":
     case "ts":
       return "bg-blue-500";
@@ -122,6 +123,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
   >({});
   const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
   const [clickCount, setClickCount] = useState<Record<string, number>>({});
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   const socialLinks = [
     {
@@ -249,55 +251,47 @@ export default function TableCard({ projects = [] }: TableCardProps) {
     }
   };
 
-  const handleFinalDownload = async (
-    fileUrl: string,
-    filename: string,
-    projectId: string
-  ) => {
+  const handleFinalDownload = async (projectId: string, fileName: string) => {
     try {
-      if (!allCompleted) {
-        toast.error("Selesaikan semua persyaratan terlebih dahulu");
-        return;
-      }
+      setDownloading(projectId);
+      const toastId = toast.loading("Mengunduh file...");
 
-      const res = await fetch(`/api/projects/${projectId}`);
-      if (!res.ok) throw new Error("Gagal mengambil file dari server");
-      const data = await res.json().catch(() => ({}));
-      const downloadLink = data?.file_url || fileUrl;
-      if (!downloadLink) throw new Error("File URL tidak ditemukan");
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (!response.ok) throw new Error("Gagal mengunduh file");
 
-      const a = document.createElement("a");
-      a.href = downloadLink;
-      a.download = filename || "project";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
 
-      toast.success("Download dimulai!");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      setClickCount((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] || 0) + 1,
-      }));
-
-      setRequirements({ instagram: false, tiktok: false, youtube: false });
-      setSelectedFile(null);
+      toast.success("Download berhasil!", { id: toastId });
+      setDownloading(null);
     } catch (err: any) {
-      console.error(err);
-      toast.error("Gagal mendownload file: " + err.message);
+      toast.error("Gagal download: " + err.message);
+      setDownloading(null);
     }
   };
 
-  // getDownloadButton & Logika lain tidak ada perubahan...
   const getDownloadButton = (project: Project) => {
     const downloadStatus = downloadStatuses[project.id];
+
     if (!downloadStatus) {
       return (
         <Button
           variant="outline"
           size="sm"
           className="h-8 px-3 text-xs font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-          onClick={(e) => handleRequestDownload(project.id, e)}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleRequestDownload(project.id, e);
+          }}
           title="Request Download"
         >
           <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -305,6 +299,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
         </Button>
       );
     }
+
     if (downloadStatus.status === "pending") {
       return (
         <Popover>
@@ -314,28 +309,30 @@ export default function TableCard({ projects = [] }: TableCardProps) {
               size="sm"
               className="h-8 px-3 text-xs font-medium border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950"
               title="Menunggu Persetujuan"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             >
               <Clock className="h-3.5 w-3.5 mr-1.5" />
               Pending
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-72">
-            <div className="space-y-3">
+          <PopoverContent side="left" className="w-64">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="rounded-full bg-amber-100 dark:bg-amber-900 p-2">
-                  <Clock className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-                </div>
-                <p className="text-sm font-semibold">Menunggu Persetujuan</p>
+                <Clock className="h-4 w-4 text-amber-500" />
+                <p className="text-sm font-medium">Menunggu Persetujuan</p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Permintaan download Anda sedang diproses. Kami akan meninjau dan
-                memberikan akses segera.
+              <p className="text-xs text-muted-foreground">
+                Permintaan download Anda sedang diproses
               </p>
             </div>
           </PopoverContent>
         </Popover>
       );
     }
+
     if (downloadStatus.status === "rejected") {
       return (
         <Popover>
@@ -345,28 +342,30 @@ export default function TableCard({ projects = [] }: TableCardProps) {
               size="sm"
               className="h-8 px-3 text-xs font-medium border-red-300 text-red-700 dark:border-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
               title="Permintaan Ditolak"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             >
               <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
               Rejected
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-72">
-            <div className="space-y-3">
+          <PopoverContent side="left" className="w-64">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="rounded-full bg-red-100 dark:bg-red-900 p-2">
-                  <AlertCircle className="h-4 w-4 text-red-700 dark:text-red-400" />
-                </div>
-                <p className="text-sm font-semibold">Permintaan Ditolak</p>
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <p className="text-sm font-medium">Permintaan Ditolak</p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Maaf, permintaan download Anda tidak dapat disetujui saat ini.
-                Silakan hubungi admin untuk informasi lebih lanjut.
+              <p className="text-xs text-muted-foreground">
+                Maaf, permintaan download Anda tidak dapat disetujui
               </p>
             </div>
           </PopoverContent>
         </Popover>
       );
     }
+
     if (downloadStatus.status === "approved") {
       return (
         <Popover
@@ -383,9 +382,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                setSelectedFile(
-                  selectedFile === project.id ? null : project.id
-                );
+                setSelectedFile(selectedFile === project.id ? null : project.id);
               }}
               title="Download Disetujui - Klik untuk mulai"
             >
@@ -398,16 +395,15 @@ export default function TableCard({ projects = [] }: TableCardProps) {
             className="w-80"
             onInteractOutside={(e) => e.preventDefault()}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="rounded-full bg-emerald-100 dark:bg-emerald-900 p-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
-                </div>
-                <p className="text-sm font-semibold">Download Approved</p>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <p className="text-sm font-medium">Download Disetujui</p>
               </div>
-              <div className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4">
-                <p className="text-xs font-semibold text-foreground">
-                  Complete requirements to proceed:
+
+              <div className="space-y-3 rounded-lg border bg-muted/50 p-3">
+                <p className="text-xs font-medium text-foreground">
+                  Selesaikan persyaratan untuk lanjut:
                 </p>
                 <div className="space-y-2">
                   {socialLinks.map(({ key, url, label, icon: Icon }) => {
@@ -416,10 +412,10 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                     return (
                       <div
                         key={key}
-                        className={`flex w-full items-center justify-between rounded-md p-3 text-xs font-medium transition-all ${
+                        className={`flex w-full items-center justify-between rounded-md p-2 text-xs font-medium transition-colors ${
                           isCompleted
-                            ? "cursor-default bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700"
-                            : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            ? "cursor-default bg-emerald-500/10 text-emerald-600"
+                            : "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
                         }`}
                         onClick={async (e) => {
                           e.stopPropagation();
@@ -439,9 +435,11 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                         }}
                       >
                         <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" /> Follow {label}
+                          <Icon className="h-4 w-4" /> {label}
                         </span>
-                        {isCompleted && <CheckCircle2 className="h-4 w-4" />}
+                        {isCompleted && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        )}
                       </div>
                     );
                   })}
@@ -449,24 +447,24 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleFinalDownload(
-                      project.file_url || "",
-                      project.name,
-                      project.id
-                    );
+                    handleFinalDownload(project.id, project.name);
                   }}
-                  disabled={!allCompleted}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+                  disabled={!allCompleted || downloading === project.id}
+                  className="w-full"
                   size="sm"
                 >
-                  {allCompleted ? (
+                  {downloading === project.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span>Downloading...</span>
+                    </>
+                  ) : allCompleted ? (
                     <>
                       <Download className="mr-2 h-4 w-4" /> Download Now
                     </>
                   ) : (
                     <>
-                      <Clock className="mr-2 h-4 w-4" /> Complete All
-                      Requirements
+                      <Clock className="mr-2 h-4 w-4" /> Selesaikan Semua
                     </>
                   )}
                 </Button>
@@ -476,6 +474,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
         </Popover>
       );
     }
+
     return null;
   };
 
@@ -498,10 +497,9 @@ export default function TableCard({ projects = [] }: TableCardProps) {
   return (
     <div className="space-y-0 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-950">
       {projects.map((project, index) => {
-        // [FIX 3] Logika untuk menentukan status berdasarkan 'type'
-        let statusKey: "completed" | "planned" | "ongoing" = "completed"; // Default 'Public'
+        let statusKey: "completed" | "planned" | "ongoing" = "completed";
         if (project.type?.includes("Pribadi")) {
-          statusKey = "planned"; // Jika 'Private'
+          statusKey = "planned";
         }
         const currentStatus = statusConfig[statusKey];
         const StatusIcon = currentStatus.icon;
@@ -535,10 +533,10 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                               handleProjectClick(project.id);
                             }}
                           >
-                            {project.name} {/* Menggunakan project.name */}
+                            {project.name}
                           </h3>
                         </PopoverTrigger>
-                        <PopoverContent className="w-96 p-0" side="top">
+                        <PopoverContent className="w-80 p-0" side="top">
                           <img
                             src={project.image_url}
                             alt={project.name}
@@ -549,7 +547,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                     ) : (
                       <Link href={`/projects/${project.id}`}>
                         <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
-                          {project.name} {/* Menggunakan project.name */}
+                          {project.name}
                         </h3>
                       </Link>
                     )}
@@ -586,16 +584,12 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span className="font-medium">
-                      {(project.download_count ?? 0) +
-                        (clickCount[project.id] || 0)}
+                      {project.download_count ?? 0}
                     </span>
-
-                    {/* Menggunakan project.downloadCount */}
                   </div>
                   <span className="text-slate-500 dark:text-slate-500">
                     {formatDate(project.uploadDate)}
-                  </span>{" "}
-                  {/* Menggunakan project.uploadDate */}
+                  </span>
                 </div>
               </div>
               <div className="flex items-start pt-1">
