@@ -257,8 +257,9 @@ export default function Projects() {
       window.URL.revokeObjectURL(url);
 
       toast.success("Download berhasil!", { id: toastId });
-      setDownloading(null);
       setHasNewDownload(true);
+      setDownloading(null);
+      
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
       setDownloading(null);

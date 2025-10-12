@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { useTheme } from "next-themes";
 
+
 interface UserProfile {
   id: string;
   email: string;
