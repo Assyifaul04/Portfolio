@@ -3,23 +3,21 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { supabase } from "@/lib/supabaseClient";
 
 // ========================
 // GET: Ambil semua project
 // ========================
 export async function GET(req: NextRequest) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("projects")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json(data || []);
   } catch (err: any) {
-    console.error("GET Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -41,6 +39,9 @@ export async function POST(req: NextRequest) {
     const language = (formData.get("language")?.toString() || "").split(",").map(l => l.trim());
     const sort = formData.get("sort")?.toString() || "Last updated";
 
+    if (!title || !description || type.length === 0 || language.length === 0)
+      return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
+
     let file_url = "", image_url = "";
 
     // Upload file utama
@@ -48,23 +49,20 @@ export async function POST(req: NextRequest) {
     if (file) {
       const fileName = `${uuidv4()}-${file.name}`;
       const buffer = Buffer.from(await file.arrayBuffer());
-      const { error } = await supabaseAdmin.storage
-        .from("project-files")
-        .upload(fileName, buffer, { contentType: file.type });
-      if (error) throw new Error(`File upload failed: ${error.message}`);
+      const { error } = await supabaseAdmin.storage.from("project-files").upload(fileName, buffer, { contentType: file.type });
+      if (error) return NextResponse.json({ error: `File upload failed: ${error.message}` }, { status: 500 });
       file_url = supabaseAdmin.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+    } else {
+      return NextResponse.json({ error: "Project file is required" }, { status: 400 });
     }
 
-    // Upload image preview
+    // Upload image preview (optional)
     const image = formData.get("image") as any;
     if (image) {
       const imageName = `${uuidv4()}-${image.name}`;
       const buffer = Buffer.from(await image.arrayBuffer());
-      const { error } = await supabaseAdmin.storage
-        .from("project-files")
-        .upload(imageName, buffer, { contentType: image.type });
-      if (error) throw new Error(`Image upload failed: ${error.message}`);
-      image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
+      const { error } = await supabaseAdmin.storage.from("project-files").upload(imageName, buffer, { contentType: image.type });
+      if (!error) image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
     }
 
     // Insert ke tabel projects
@@ -84,11 +82,10 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json(data, { status: 201 });
   } catch (err: any) {
-    console.error("POST Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -99,8 +96,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const formData = await req.formData();
     const id = formData.get("id")?.toString();
@@ -110,12 +106,7 @@ export async function PATCH(req: NextRequest) {
     const fields = ["title", "description", "tags", "type", "language", "sort"];
     for (const field of fields) {
       const value = formData.get(field)?.toString();
-      if (value) {
-        updatePayload[field] =
-          field === "tags" || field === "type" || field === "language"
-            ? value.split(",").map(v => v.trim())
-            : value;
-      }
+      if (value) updatePayload[field] = ["tags", "type", "language"].includes(field) ? value.split(",").map(v => v.trim()) : value;
     }
 
     // File baru
@@ -124,7 +115,7 @@ export async function PATCH(req: NextRequest) {
       const fileName = `${uuidv4()}-${newFile.name}`;
       const buffer = Buffer.from(await newFile.arrayBuffer());
       const { error } = await supabaseAdmin.storage.from("project-files").upload(fileName, buffer, { contentType: newFile.type });
-      if (error) throw new Error(`File upload failed: ${error.message}`);
+      if (error) return NextResponse.json({ error: `File upload failed: ${error.message}` }, { status: 500 });
       updatePayload.file_url = supabaseAdmin.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
     }
 
@@ -134,8 +125,7 @@ export async function PATCH(req: NextRequest) {
       const imageName = `${uuidv4()}-${newImage.name}`;
       const buffer = Buffer.from(await newImage.arrayBuffer());
       const { error } = await supabaseAdmin.storage.from("project-files").upload(imageName, buffer, { contentType: newImage.type });
-      if (error) throw new Error(`Image upload failed: ${error.message}`);
-      updatePayload.image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
+      if (!error) updatePayload.image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
     }
 
     const { data, error } = await supabaseAdmin
@@ -145,14 +135,12 @@ export async function PATCH(req: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
   } catch (err: any) {
-    console.error("PATCH Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
 
 // ========================
 // DELETE: Hapus project
@@ -171,11 +159,11 @@ export async function DELETE(req: NextRequest) {
       .select("file_url, image_url")
       .eq("id", id)
       .single();
-    if (fetchError) throw new Error("Project not found");
+    if (fetchError || !projectData) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
     // Hapus record
     const { error: deleteError } = await supabaseAdmin.from("projects").delete().eq("id", id);
-    if (deleteError) throw deleteError;
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
 
     // Hapus file & image dari storage
     if (projectData.file_url) {
@@ -189,8 +177,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ message: "Project deleted successfully" });
   } catch (err: any) {
-    console.error("DELETE Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-

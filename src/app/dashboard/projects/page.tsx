@@ -147,18 +147,15 @@ export default function ProjectsPage() {
   }
 
   async function handleSubmit() {
-    // Validasi input wajib
     if (!title.trim() || !description.trim() || selectedTypes.length === 0 || selectedLanguages.length === 0) {
       toast.error("Please fill all required fields");
       return;
     }
-
-    // Validasi file wajib saat create
     if (!editingId && !fileFile) {
       toast.error("Project file is required");
       return;
     }
-
+  
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("description", description.trim());
@@ -166,12 +163,8 @@ export default function ProjectsPage() {
     formData.append("type", selectedTypes.join(","));
     formData.append("language", selectedLanguages.join(","));
     formData.append("sort", sort);
-  
-    // Tambahkan file dan image jika ada
     if (fileFile) formData.append("file", fileFile);
     if (imageFile) formData.append("image", imageFile);
-  
-    // Tambahkan ID untuk update
     if (editingId) formData.append("id", editingId);
   
     try {
@@ -181,14 +174,22 @@ export default function ProjectsPage() {
         credentials: "include",
       });
   
-      if (!res.ok) {
-        const errorData = await res.json();
-        toast.error(editingId ? "Failed to update project" : "Failed to create project");
-        console.error("Submit error:", errorData);
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        console.error("Server returned invalid JSON:", text);
+        toast.error("Server returned invalid response");
         return;
       }
   
-      const data = await res.json();
+      if (!res.ok) {
+        toast.error(editingId ? "Failed to update project" : "Failed to create project");
+        console.error("Submit error:", data);
+        return;
+      }
+  
       toast.success(editingId ? "Project updated successfully" : "Project created successfully");
       resetForm();
       setIsOpen(false);
@@ -198,6 +199,7 @@ export default function ProjectsPage() {
       console.error("Submit error:", error);
     }
   }
+  
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this project?")) return;
