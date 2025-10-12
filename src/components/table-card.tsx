@@ -30,7 +30,7 @@ interface Project {
   description?: string;
   image_url?: string;
   file_url?: string;
-  download_count?: number; // ⬅ ubah ke snake_case
+  download_count?: number;
   tags?: string[];
   uploadDate: string;
   type?: string[];
@@ -151,7 +151,6 @@ export default function TableCard({ projects = [] }: TableCardProps) {
   });
   const allCompleted = Object.values(requirements).every(Boolean);
 
-  // Fetch download statuses (tidak ada perubahan)
   useEffect(() => {
     async function fetchDownloadStatuses() {
       if (session?.user?.email) {
@@ -250,42 +249,44 @@ export default function TableCard({ projects = [] }: TableCardProps) {
     }
   };
 
-  const handleFinalDownload = async (fileUrl: string, filename: string, projectId: string) => {
+  const handleFinalDownload = async (
+    fileUrl: string,
+    filename: string,
+    projectId: string
+  ) => {
     try {
       if (!allCompleted) {
         toast.error("Selesaikan semua persyaratan terlebih dahulu");
         return;
       }
-  
-      // ✅ Fetch ke endpoint /api/projects/[id]
-      const response = await fetch(`/api/projects/${projectId}`);
-  
-      if (!response.ok) {
-        throw new Error("Gagal mengambil file dari server");
-      }
-  
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-  
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  
+
+      const res = await fetch(`/api/projects/${projectId}`);
+      if (!res.ok) throw new Error("Gagal mengambil file dari server");
+      const data = await res.json().catch(() => ({}));
+      const downloadLink = data?.file_url || fileUrl;
+      if (!downloadLink) throw new Error("File URL tidak ditemukan");
+
+      const a = document.createElement("a");
+      a.href = downloadLink;
+      a.download = filename || "project";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
       toast.success("Download dimulai!");
-  
-      // Optional: reset state sosial
+
+      setClickCount((prev) => ({
+        ...prev,
+        [projectId]: (prev[projectId] || 0) + 1,
+      }));
+
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
-  
     } catch (err: any) {
       console.error(err);
       toast.error("Gagal mendownload file: " + err.message);
     }
   };
-  
 
   // getDownloadButton & Logika lain tidak ada perubahan...
   const getDownloadButton = (project: Project) => {
@@ -585,8 +586,10 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span className="font-medium">
-                      {project.download_count ?? 0}
+                      {(project.download_count ?? 0) +
+                        (clickCount[project.id] || 0)}
                     </span>
+
                     {/* Menggunakan project.downloadCount */}
                   </div>
                   <span className="text-slate-500 dark:text-slate-500">
