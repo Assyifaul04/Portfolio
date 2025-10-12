@@ -107,16 +107,23 @@ export default function ProjectsPage() {
 
   async function fetchProjects() {
     setLoading(true);
-    const res = await fetch("/api/projects", { credentials: "include" });
-    if (!res.ok) {
+    try {
+      const res = await fetch("/api/projects", { credentials: "include" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast.error("Failed to fetch projects");
+        console.error("GET Projects Error:", errorData);
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      setProjects(data);
+    } catch (error) {
       toast.error("Failed to fetch projects");
-      console.error("GET Projects Error:", await res.json());
+      console.error("Fetch error:", error);
+    } finally {
       setLoading(false);
-      return;
     }
-    const data = await res.json();
-    setProjects(data);
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -140,55 +147,80 @@ export default function ProjectsPage() {
   }
 
   async function handleSubmit() {
+    // Validasi input wajib
+    if (!title.trim() || !description.trim() || selectedTypes.length === 0 || selectedLanguages.length === 0) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    // Validasi file wajib saat create
+    if (!editingId && !fileFile) {
+      toast.error("Project file is required");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("tags", tags);
+    formData.append("title", title.trim());
+    formData.append("description", description.trim());
+    formData.append("tags", tags.trim());
     formData.append("type", selectedTypes.join(","));
     formData.append("language", selectedLanguages.join(","));
     formData.append("sort", sort);
   
-    // Jika file/image baru dipilih
+    // Tambahkan file dan image jika ada
     if (fileFile) formData.append("file", fileFile);
     if (imageFile) formData.append("image", imageFile);
   
+    // Tambahkan ID untuk update
     if (editingId) formData.append("id", editingId);
   
-    const res = await fetch("/api/projects", {
-      method: editingId ? "PATCH" : "POST",
-      body: formData,
-      credentials: "include",
-    });
+    try {
+      const res = await fetch("/api/projects", {
+        method: editingId ? "PATCH" : "POST",
+        body: formData,
+        credentials: "include",
+      });
   
-    if (!res.ok) {
-      toast.error(editingId ? "Failed to update project" : "Failed to create project");
-      console.error(await res.json());
-      return;
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast.error(editingId ? "Failed to update project" : "Failed to create project");
+        console.error("Submit error:", errorData);
+        return;
+      }
+  
+      const data = await res.json();
+      toast.success(editingId ? "Project updated successfully" : "Project created successfully");
+      resetForm();
+      setIsOpen(false);
+      fetchProjects();
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error("Submit error:", error);
     }
-  
-    toast.success(editingId ? "Project updated successfully" : "Project created successfully");
-    resetForm();
-    setIsOpen(false);
-    fetchProjects();
   }
-  
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this project?")) return;
     
-    const res = await fetch(`/api/projects?id=${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(`/api/projects?id=${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast.error("Failed to delete project");
+        console.error("Delete error:", errorData);
+        return;
+      }
+
+      toast.success("Project deleted successfully");
+      fetchProjects();
+    } catch (error) {
       toast.error("Failed to delete project");
-      console.error("Delete error:", await res.json());
-      return;
+      console.error("Delete error:", error);
     }
-
-    toast.success("Project deleted successfully");
-    fetchProjects();
   }
 
   function handleEdit(project: Project) {
@@ -199,6 +231,9 @@ export default function ProjectsPage() {
     setSelectedTypes(project.type || []);
     setSelectedLanguages(project.language || []);
     setSort(project.sort || "Last updated");
+    // Reset file inputs saat edit
+    setFileFile(null);
+    setImageFile(null);
     setIsOpen(true);
   }
 
@@ -267,41 +302,41 @@ export default function ProjectsPage() {
                   />
                 </div>
 
-                {!editingId && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="file" className="flex items-center gap-2">
-                        <FileArchive className="h-4 w-4" />
-                        Project File (ZIP)
-                      </Label>
-                      <Input
-                        id="file"
-                        type="file"
-                        accept=".zip"
-                        onChange={(e) => setFileFile(e.target.files?.[0] || null)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Files cannot be changed after creation
-                      </p>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="file" className="flex items-center gap-2">
+                    <FileArchive className="h-4 w-4" />
+                    Project File (ZIP) {!editingId && "*"}
+                  </Label>
+                  <Input
+                    id="file"
+                    type="file"
+                    accept=".zip"
+                    onChange={(e) => setFileFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editingId 
+                      ? "Leave empty to keep current file, or upload new file to replace it"
+                      : "Required: Upload a ZIP file containing your project"}
+                  </p>
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="image" className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        Project Image
-                      </Label>
-                      <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Images cannot be changed after creation
-                      </p>
-                    </div>
-                  </>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="image" className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Project Image
+                  </Label>
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editingId
+                      ? "Leave empty to keep current image, or upload new image to replace it"
+                      : "Optional: Upload a preview image for your project"}
+                  </p>
+                </div>
 
                 <div className="space-y-2">
                   <Label>Type *</Label>
@@ -386,7 +421,13 @@ export default function ProjectsPage() {
 
                 <Button
                   onClick={handleSubmit}
-                  disabled={!title || !description || selectedTypes.length === 0 || selectedLanguages.length === 0}
+                  disabled={
+                    !title.trim() || 
+                    !description.trim() || 
+                    selectedTypes.length === 0 || 
+                    selectedLanguages.length === 0 ||
+                    (!editingId && !fileFile)
+                  }
                   className="w-full"
                 >
                   {editingId ? "Update Project" : "Create Project"}
