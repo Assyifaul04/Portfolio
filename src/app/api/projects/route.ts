@@ -1,8 +1,9 @@
-import { authOptions } from "@/lib/authOptions";
-import { createAuthenticatedSupabaseClient, supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { supabase } from "@/lib/supabaseClient";
 
 // ========================
 // GET: Ambil semua project
@@ -29,11 +30,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabaseAuth = createAuthenticatedSupabaseClient(session);
     const formData = await req.formData();
-
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || "";
     const tags = (formData.get("tags")?.toString() || "").split(",").map(t => t.trim());
@@ -48,27 +48,27 @@ export async function POST(req: NextRequest) {
     if (file) {
       const fileName = `${uuidv4()}-${file.name}`;
       const buffer = Buffer.from(await file.arrayBuffer());
-      const { error } = await supabaseAuth.storage
+      const { error } = await supabaseAdmin.storage
         .from("project-files")
         .upload(fileName, buffer, { contentType: file.type });
       if (error) throw new Error(`File upload failed: ${error.message}`);
-      file_url = supabaseAuth.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+      file_url = supabaseAdmin.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
     }
 
-    // Upload gambar preview
+    // Upload image preview
     const image = formData.get("image") as any;
     if (image) {
       const imageName = `${uuidv4()}-${image.name}`;
       const buffer = Buffer.from(await image.arrayBuffer());
-      const { error } = await supabaseAuth.storage
+      const { error } = await supabaseAdmin.storage
         .from("project-files")
         .upload(imageName, buffer, { contentType: image.type });
       if (error) throw new Error(`Image upload failed: ${error.message}`);
-      image_url = supabaseAuth.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
+      image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
     }
 
     // Insert ke tabel projects
-    const { data, error } = await supabaseAuth
+    const { data, error } = await supabaseAdmin
       .from("projects")
       .insert([{
         title,
@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) throw error;
-    return NextResponse.json(data, { status: 201 });
 
-  } catch (error: any) {
-    console.error("POST Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
+  } catch (err: any) {
+    console.error("POST Error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
@@ -99,47 +99,46 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabaseAuth = createAuthenticatedSupabaseClient(session);
     const formData = await req.formData();
     const id = formData.get("id")?.toString();
     if (!id) return NextResponse.json({ error: "Project ID is required" }, { status: 400 });
 
     const updatePayload: Record<string, any> = {};
     const fields = ["title", "description", "tags", "type", "language", "sort"];
-
     for (const field of fields) {
       const value = formData.get(field)?.toString();
       if (value) {
         updatePayload[field] =
           field === "tags" || field === "type" || field === "language"
-            ? value.split(",").map((v) => v.trim())
+            ? value.split(",").map(v => v.trim())
             : value;
       }
     }
 
-    // Update file baru jika ada
+    // File baru
     const newFile = formData.get("file") as any;
     if (newFile) {
       const fileName = `${uuidv4()}-${newFile.name}`;
       const buffer = Buffer.from(await newFile.arrayBuffer());
-      const { error } = await supabaseAuth.storage.from("project-files").upload(fileName, buffer, { contentType: newFile.type });
+      const { error } = await supabaseAdmin.storage.from("project-files").upload(fileName, buffer, { contentType: newFile.type });
       if (error) throw new Error(`File upload failed: ${error.message}`);
-      updatePayload.file_url = supabaseAuth.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
+      updatePayload.file_url = supabaseAdmin.storage.from("project-files").getPublicUrl(fileName).data.publicUrl;
     }
 
-    // Update image baru jika ada
+    // Image baru
     const newImage = formData.get("image") as any;
     if (newImage) {
       const imageName = `${uuidv4()}-${newImage.name}`;
       const buffer = Buffer.from(await newImage.arrayBuffer());
-      const { error } = await supabaseAuth.storage.from("project-files").upload(imageName, buffer, { contentType: newImage.type });
+      const { error } = await supabaseAdmin.storage.from("project-files").upload(imageName, buffer, { contentType: newImage.type });
       if (error) throw new Error(`Image upload failed: ${error.message}`);
-      updatePayload.image_url = supabaseAuth.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
+      updatePayload.image_url = supabaseAdmin.storage.from("project-files").getPublicUrl(imageName).data.publicUrl;
     }
 
-    const { data, error } = await supabaseAuth
+    const { data, error } = await supabaseAdmin
       .from("projects")
       .update(updatePayload)
       .eq("id", id)
@@ -148,12 +147,12 @@ export async function PATCH(req: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json(data);
-
-  } catch (error: any) {
-    console.error("PATCH Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: any) {
+    console.error("PATCH Error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
 
 // ========================
 // DELETE: Hapus project
@@ -163,37 +162,35 @@ export async function DELETE(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabaseAuth = createAuthenticatedSupabaseClient(session);
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
 
-    // Ambil file & image agar bisa dihapus dari storage
-    const { data: projectData, error: fetchError } = await supabaseAuth
+    // Ambil file & image untuk dihapus
+    const { data: projectData, error: fetchError } = await supabaseAdmin
       .from("projects")
       .select("file_url, image_url")
       .eq("id", id)
       .single();
-
     if (fetchError) throw new Error("Project not found");
 
-    // Hapus record dari DB
-    const { error: deleteError } = await supabaseAuth.from("projects").delete().eq("id", id);
+    // Hapus record
+    const { error: deleteError } = await supabaseAdmin.from("projects").delete().eq("id", id);
     if (deleteError) throw deleteError;
 
     // Hapus file & image dari storage
     if (projectData.file_url) {
       const fileName = projectData.file_url.split("/").pop()!;
-      await supabaseAuth.storage.from("project-files").remove([fileName]);
+      await supabaseAdmin.storage.from("project-files").remove([fileName]);
     }
     if (projectData.image_url) {
       const imageName = projectData.image_url.split("/").pop()!;
-      await supabaseAuth.storage.from("project-files").remove([imageName]);
+      await supabaseAdmin.storage.from("project-files").remove([imageName]);
     }
 
     return NextResponse.json({ message: "Project deleted successfully" });
-
-  } catch (error: any) {
-    console.error("DELETE Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: any) {
+    console.error("DELETE Error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
