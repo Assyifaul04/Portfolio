@@ -24,6 +24,7 @@ import {
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useDownloadNotification } from "./DownloadNotificationContext";
 
 interface Project {
   id: string;
@@ -47,7 +48,6 @@ interface DownloadStatus {
   status: "pending" | "approved" | "rejected";
 }
 
-// Helper untuk warna language tag
 const languageColor = (lang?: string): string => {
   const normalized = lang?.toLowerCase().trim();
   switch (normalized) {
@@ -117,6 +117,7 @@ const statusConfig = {
 export default function TableCard({ projects = [] }: TableCardProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { setHasNewDownload } = useDownloadNotification();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [downloadStatuses, setDownloadStatuses] = useState<
     Record<string, DownloadStatus>
@@ -271,6 +272,16 @@ export default function TableCard({ projects = [] }: TableCardProps) {
       window.URL.revokeObjectURL(url);
 
       toast.success("Download berhasil!", { id: toastId });
+      
+      // Set notifikasi ke localStorage dan context
+      if (session?.user?.email) {
+        localStorage.setItem(
+          `download_notification_${session.user.email}`,
+          "true"
+        );
+        setHasNewDownload(true);
+      }
+      
       setDownloading(null);
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
