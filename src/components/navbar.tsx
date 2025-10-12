@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { useTheme } from "next-themes";
-
+import { useDownloadNotification } from "./DownloadNotificationContext";
 
 interface UserProfile {
   id: string;
@@ -39,32 +39,28 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [hasNewDownload, setHasNewDownload] = useState(false);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  
+  // Gunakan context untuk notifikasi
+  const { hasNewDownload, setHasNewDownload } = useDownloadNotification();
 
   // Ensure theme is mounted
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Check for download notification
+  // Check initial notification state dari localStorage
   useEffect(() => {
     if (session?.user?.email) {
-      const checkNotification = () => {
-        const stored = localStorage.getItem(
-          `download_notification_${session.user.email}`
-        );
-        setHasNewDownload(stored === "true");
-      };
-
-      checkNotification();
-
-      // Listen for storage events
-      window.addEventListener("storage", checkNotification);
-      return () => window.removeEventListener("storage", checkNotification);
+      const stored = localStorage.getItem(
+        `download_notification_${session.user.email}`
+      );
+      if (stored === "true") {
+        setHasNewDownload(true);
+      }
     }
-  }, [session]);
+  }, [session, setHasNewDownload]);
 
   // Scroll effect
   useEffect(() => {
@@ -99,10 +95,20 @@ export default function Navbar() {
     // Clear notification on logout
     if (session?.user?.email) {
       localStorage.removeItem(`download_notification_${session.user.email}`);
+      setHasNewDownload(false);
     }
     await signOut({ callbackUrl: "/auth/login" });
     setUserProfile(null);
     router.push("/auth/login");
+  };
+
+  const handleClearNotification = () => {
+    if (session?.user?.email) {
+      localStorage.removeItem(
+        `download_notification_${session.user.email}`
+      );
+      setHasNewDownload(false);
+    }
   };
 
   return (
@@ -252,15 +258,7 @@ export default function Navbar() {
                           <Link
                             href="/riwayat"
                             className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 text-sm cursor-pointer flex items-center justify-between transition-colors duration-200"
-                            onClick={() => {
-                              // Clear notification when clicked
-                              if (session?.user?.email) {
-                                localStorage.removeItem(
-                                  `download_notification_${session.user.email}`
-                                );
-                                setHasNewDownload(false);
-                              }
-                            }}
+                            onClick={handleClearNotification}
                           >
                             <span>Download History</span>
                             {hasNewDownload && (
