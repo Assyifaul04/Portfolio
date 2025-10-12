@@ -235,28 +235,12 @@ export default function Projects() {
     }
   };
 
-  const handleFinalDownload = async (
-    fileUrl: string,
-    filename: string,
-    projectId: string
-  ) => {
+  const handleFinalDownload = async (projectId: string, fileName: string) => {
     try {
-      if (!allCompleted) {
-        toast.error("Selesaikan semua persyaratan terlebih dahulu");
-        return;
-      }
-
       setDownloading(projectId);
-
-      // Toast loading
       const toastId = toast.loading("Mengunduh file...");
 
-      // Simulasi delay untuk animasi
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Panggil endpoint /api/projects/[id]
       const response = await fetch(`/api/projects/${projectId}`);
-
       if (!response.ok) throw new Error("Gagal mengunduh file");
 
       const blob = await response.blob();
@@ -264,27 +248,13 @@ export default function Projects() {
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = filename;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      // Update toast menjadi success
       toast.success("Download berhasil!", { id: toastId });
-
-      // Set notification for navbar
-      if (session?.user?.email) {
-        localStorage.setItem(
-          `download_notification_${session.user.email}`,
-          "true"
-        );
-        // Trigger storage event untuk update navbar
-        window.dispatchEvent(new Event("storage"));
-      }
-
-      setRequirements({ instagram: false, tiktok: false, youtube: false });
-      setSelectedFile(null);
       setDownloading(null);
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
@@ -461,11 +431,7 @@ export default function Projects() {
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleFinalDownload(
-                      file.file_url || "",
-                      file.name,
-                      file.id
-                    );
+                    handleFinalDownload(file.id, file.name);
                   }}
                   disabled={!allCompleted || downloading === file.id}
                   className="w-full"

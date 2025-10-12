@@ -4,10 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { 
-  Calendar, 
-  Download, 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Calendar,
+  Download,
   Instagram,
   Play,
   Music,
@@ -20,7 +24,7 @@ import {
   Eye,
   AlertCircle,
   Package,
-  Code2
+  Code2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -46,27 +50,27 @@ const languageColor = (lang?: string): string => {
   const normalized = lang?.toLowerCase().trim();
   const colors: Record<string, string> = {
     "next.js": "bg-slate-500",
-    "nextjs": "bg-slate-500",
-    "golang": "bg-cyan-400",
-    "go": "bg-cyan-400",
-    "typescript": "bg-blue-500",
-    "ts": "bg-blue-500",
-    "javascript": "bg-yellow-400",
-    "js": "bg-yellow-400",
-    "java": "bg-orange-500",
-    "dart": "bg-teal-500",
-    "blade": "bg-red-500",
-    "html": "bg-orange-600",
-    "css": "bg-blue-400",
-    "python": "bg-blue-600",
-    "py": "bg-blue-600",
-    "php": "bg-indigo-500",
-    "ruby": "bg-red-600",
-    "rust": "bg-orange-700",
+    nextjs: "bg-slate-500",
+    golang: "bg-cyan-400",
+    go: "bg-cyan-400",
+    typescript: "bg-blue-500",
+    ts: "bg-blue-500",
+    javascript: "bg-yellow-400",
+    js: "bg-yellow-400",
+    java: "bg-orange-500",
+    dart: "bg-teal-500",
+    blade: "bg-red-500",
+    html: "bg-orange-600",
+    css: "bg-blue-400",
+    python: "bg-blue-600",
+    py: "bg-blue-600",
+    php: "bg-indigo-500",
+    ruby: "bg-red-600",
+    rust: "bg-orange-700",
     "c++": "bg-pink-500",
-    "cpp": "bg-pink-500",
+    cpp: "bg-pink-500",
     "c#": "bg-purple-600",
-    "csharp": "bg-purple-600",
+    csharp: "bg-purple-600",
   };
   return colors[normalized || ""] || "bg-gray-500";
 };
@@ -77,13 +81,30 @@ export default function ProjectID() {
   const { data: session } = useSession();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloadStatus, setDownloadStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+  const [downloadStatus, setDownloadStatus] = useState<
+    "none" | "pending" | "approved" | "rejected"
+  >("none");
   const [showDownloadPopover, setShowDownloadPopover] = useState(false);
-  
+
   const socialLinks = [
-    { key: "instagram", url: process.env.NEXT_PUBLIC_INSTAGRAM, label: "Instagram", icon: Instagram },
-    { key: "tiktok", url: process.env.NEXT_PUBLIC_TIKTOK, label: "TikTok", icon: Music },
-    { key: "youtube", url: process.env.NEXT_PUBLIC_YOUTUBE, label: "YouTube", icon: Play },
+    {
+      key: "instagram",
+      url: process.env.NEXT_PUBLIC_INSTAGRAM,
+      label: "Instagram",
+      icon: Instagram,
+    },
+    {
+      key: "tiktok",
+      url: process.env.NEXT_PUBLIC_TIKTOK,
+      label: "TikTok",
+      icon: Music,
+    },
+    {
+      key: "youtube",
+      url: process.env.NEXT_PUBLIC_YOUTUBE,
+      label: "YouTube",
+      icon: Play,
+    },
   ];
 
   const [requirements, setRequirements] = useState({
@@ -101,7 +122,7 @@ export default function ProjectID() {
       try {
         const res = await fetch(`/api/projects/${id}`);
         if (!res.ok) throw new Error("Proyek tidak ditemukan");
-        
+
         const data = await res.json();
         const projectData: ProjectDetail = {
           id: data.id,
@@ -121,7 +142,9 @@ export default function ProjectID() {
 
         // Cek status download
         if (session?.user?.email) {
-          const downloadRes = await fetch(`/api/downloads?userId=${session.user.email}`);
+          const downloadRes = await fetch(
+            `/api/downloads?userId=${session.user.email}`
+          );
           if (downloadRes.ok) {
             const downloads = await downloadRes.json();
             const found = downloads.find((d: any) => d.project_id === id);
@@ -131,11 +154,15 @@ export default function ProjectID() {
           }
 
           // Cek status follows
-          const followsRes = await fetch(`/api/follows?userId=${session.user.email}`);
+          const followsRes = await fetch(
+            `/api/follows?userId=${session.user.email}`
+          );
           if (followsRes.ok) {
             const follows = await followsRes.json();
             const mapFollow: any = {};
-            follows.forEach((f: any) => { mapFollow[f.platform] = f.is_followed; });
+            follows.forEach((f: any) => {
+              mapFollow[f.platform] = f.is_followed;
+            });
             setRequirements((prev) => ({ ...prev, ...mapFollow }));
           }
         }
@@ -164,7 +191,7 @@ export default function ProjectID() {
       });
 
       if (!response.ok) throw new Error("Gagal mengirim permintaan");
-      
+
       toast.success("Permintaan berhasil dikirim");
       setDownloadStatus("pending");
     } catch (err: any) {
@@ -190,8 +217,9 @@ export default function ProjectID() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.success("Download dimulai!");
+      // Reset requirements setelah download berhasil
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setShowDownloadPopover(false);
     } catch (err: any) {
@@ -225,8 +253,14 @@ export default function ProjectID() {
         <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400">
           Proyek tidak ditemukan
         </h3>
-        <p className="text-slate-500 mt-2">ID proyek yang Anda cari tidak tersedia</p>
-        <Button onClick={() => router.back()} className="mt-4" variant="outline">
+        <p className="text-slate-500 mt-2">
+          ID proyek yang Anda cari tidak tersedia
+        </p>
+        <Button
+          onClick={() => router.back()}
+          className="mt-4"
+          variant="outline"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali
         </Button>
@@ -250,7 +284,9 @@ export default function ProjectID() {
         <span className="text-slate-400">/</span>
         <span className="text-slate-600">Projects</span>
         <span className="text-slate-400">/</span>
-        <span className="font-semibold text-slate-900 dark:text-slate-100">{project.name}</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100">
+          {project.name}
+        </span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -266,19 +302,34 @@ export default function ProjectID() {
                   </h1>
                   <div className="flex items-center gap-2 text-sm text-slate-600 flex-wrap">
                     {/* Project Types */}
-                    {project.type && project.type.length > 0 && project.type.map((t, i) => (
-                      <Badge key={`type-${i}`} variant="secondary" className="text-xs">
-                        {t}
-                      </Badge>
-                    ))}
-                    
+                    {project.type &&
+                      project.type.length > 0 &&
+                      project.type.map((t, i) => (
+                        <Badge
+                          key={`type-${i}`}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {t}
+                        </Badge>
+                      ))}
+
                     {/* Tags */}
-                    {project.tags && project.tags.map((tag, i) => (
-                      <Badge key={`tag-${i}`} variant="outline" className="text-xs">
-                        <span className={`h-2 w-2 rounded-full ${languageColor(tag)} mr-1.5`} />
-                        {tag}
-                      </Badge>
-                    ))}
+                    {project.tags &&
+                      project.tags.map((tag, i) => (
+                        <Badge
+                          key={`tag-${i}`}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${languageColor(
+                              tag
+                            )} mr-1.5`}
+                          />
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -313,8 +364,8 @@ export default function ProjectID() {
             </CardHeader>
             <CardContent className="pt-4">
               {project.image_url && (
-                <img 
-                  src={project.image_url} 
+                <img
+                  src={project.image_url}
                   alt={project.name}
                   className="w-full rounded-md border border-slate-200 dark:border-slate-800 mb-4"
                 />
@@ -336,29 +387,35 @@ export default function ProjectID() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2 text-slate-600">
                 <Calendar className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs">Created {formatDate(project.uploadDate)}</span>
+                <span className="text-xs">
+                  Created {formatDate(project.uploadDate)}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <HardDrive className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs">{(project.size / 1024 / 1024).toFixed(1)} MB</span>
+                <span className="text-xs">
+                  {(project.size / 1024 / 1024).toFixed(1)} MB
+                </span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <Download className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs">{project.downloadCount || 0} downloads</span>
+                <span className="text-xs">
+                  {project.downloadCount || 0} downloads
+                </span>
               </div>
-              
+
               {project.sort && (
                 <div className="flex items-center gap-2 text-slate-600">
                   <Package className="h-4 w-4 flex-shrink-0" />
                   <span className="text-xs">{project.sort}</span>
                 </div>
               )}
-              
+
               <Separator />
-              
+
               {/* Download Status & Button */}
               {downloadStatus === "none" && (
-                <Button 
+                <Button
                   onClick={handleRequestDownload}
                   className="w-full"
                   size="sm"
@@ -372,7 +429,9 @@ export default function ProjectID() {
                 <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                   <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 mb-1">
                     <Clock className="h-4 w-4" />
-                    <span className="text-xs font-medium">Pending Approval</span>
+                    <span className="text-xs font-medium">
+                      Pending Approval
+                    </span>
                   </div>
                   <p className="text-xs text-amber-600 dark:text-amber-500">
                     Your request is being processed
@@ -384,7 +443,9 @@ export default function ProjectID() {
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                   <div className="flex items-center gap-2 text-red-700 dark:text-red-400 mb-1">
                     <AlertCircle className="h-4 w-4" />
-                    <span className="text-xs font-medium">Request Rejected</span>
+                    <span className="text-xs font-medium">
+                      Request Rejected
+                    </span>
                   </div>
                   <p className="text-xs text-red-600 dark:text-red-500">
                     Your download request was not approved
@@ -393,9 +454,12 @@ export default function ProjectID() {
               )}
 
               {downloadStatus === "approved" && (
-                <Popover open={showDownloadPopover} onOpenChange={setShowDownloadPopover}>
+                <Popover
+                  open={showDownloadPopover}
+                  onOpenChange={setShowDownloadPopover}
+                >
                   <PopoverTrigger asChild>
-                    <Button 
+                    <Button
                       className="w-full bg-emerald-600 hover:bg-emerald-700"
                       size="sm"
                     >
@@ -407,45 +471,59 @@ export default function ProjectID() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <p className="text-sm font-medium">Complete Requirements</p>
+                        <p className="text-sm font-medium">
+                          Complete Requirements
+                        </p>
                       </div>
-                      
+
                       <div className="space-y-2 rounded-lg border bg-muted/50 p-3">
                         {socialLinks.map(({ key, url, label, icon: Icon }) => {
-                          const isCompleted = requirements[key as keyof typeof requirements];
+                          const isCompleted =
+                            requirements[key as keyof typeof requirements];
                           return (
                             <div
                               key={key}
                               className={`flex w-full items-center justify-between rounded-md p-2 text-xs font-medium transition-colors ${
-                                isCompleted 
-                                  ? "cursor-default bg-emerald-500/10 text-emerald-600" 
+                                isCompleted
+                                  ? "cursor-default bg-emerald-500/10 text-emerald-600"
                                   : "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
                               }`}
                               onClick={async () => {
                                 if (!isCompleted && session?.user?.email) {
-                                  setRequirements((p) => ({ ...p, [key]: true }));
+                                  setRequirements((p) => ({
+                                    ...p,
+                                    [key]: true,
+                                  }));
                                   await fetch("/api/follows", {
                                     method: "POST",
-                                    headers: { "Content-Type": "application/json" },
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
                                     body: JSON.stringify({
                                       user_id: session.user.email,
                                       platform: key,
-                                      is_followed: true
-                                    })
+                                      is_followed: true,
+                                    }),
                                   });
-                                  window.open(url!, '_blank', 'noopener,noreferrer');
+                                  window.open(
+                                    url!,
+                                    "_blank",
+                                    "noopener,noreferrer"
+                                  );
                                 }
                               }}
                             >
                               <span className="flex items-center gap-2">
                                 <Icon className="h-4 w-4" /> {label}
                               </span>
-                              {isCompleted && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                              {isCompleted && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                              )}
                             </div>
                           );
                         })}
-                        
-                        <Button 
+
+                        <Button
                           onClick={handleFinalDownload}
                           disabled={!allCompleted}
                           className="w-full mt-2"
@@ -501,12 +579,23 @@ export default function ProjectID() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {project.language.map((lang, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-xs"
+                  >
                     <div className="flex items-center gap-2">
-                      <span className={`h-3 w-3 rounded-full ${languageColor(lang)}`} />
-                      <span className="text-slate-700 dark:text-slate-300">{lang}</span>
+                      <span
+                        className={`h-3 w-3 rounded-full ${languageColor(
+                          lang
+                        )}`}
+                      />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {lang}
+                      </span>
                     </div>
-                    <span className="text-slate-500">{Math.floor(100 / project.language!.length)}%</span>
+                    <span className="text-slate-500">
+                      {Math.floor(100 / project.language!.length)}%
+                    </span>
                   </div>
                 ))}
               </CardContent>
@@ -523,7 +612,11 @@ export default function ProjectID() {
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, i) => (
                     <Badge key={i} variant="outline" className="text-xs">
-                      <span className={`h-2 w-2 rounded-full ${languageColor(tag)} mr-1.5`} />
+                      <span
+                        className={`h-2 w-2 rounded-full ${languageColor(
+                          tag
+                        )} mr-1.5`}
+                      />
                       {tag}
                     </Badge>
                   ))}
