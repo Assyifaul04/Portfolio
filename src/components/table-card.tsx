@@ -257,20 +257,16 @@ export default function TableCard({ projects = [] }: TableCardProps) {
         return;
       }
   
-      // 🔥 Panggil endpoint /api/projects/[id] agar download_count bertambah
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: "GET",
-      });
+      // ✅ Fetch ke endpoint /api/projects/[id]
+      const response = await fetch(`/api/projects/${projectId}`);
   
       if (!response.ok) {
         throw new Error("Gagal mengambil file dari server");
       }
   
-      // Ambil file blob dari response
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
   
-      // Trigger download file
       const link = document.createElement("a");
       link.href = url;
       link.download = filename;
@@ -280,21 +276,16 @@ export default function TableCard({ projects = [] }: TableCardProps) {
   
       toast.success("Download dimulai!");
   
-      // Reset status sosial media dan file
+      // Optional: reset state sosial
       setRequirements({ instagram: false, tiktok: false, youtube: false });
       setSelectedFile(null);
-  
-      // 🔁 Update count di UI langsung tanpa reload
-      setClickCount((prev) => ({
-        ...prev,
-        [projectId]: (prev[projectId] || 0) + 1,
-      }));
   
     } catch (err: any) {
       console.error(err);
       toast.error("Gagal mendownload file: " + err.message);
     }
   };
+  
 
   // getDownloadButton & Logika lain tidak ada perubahan...
   const getDownloadButton = (project: Project) => {
