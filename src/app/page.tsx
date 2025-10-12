@@ -13,6 +13,7 @@ import Projects from "@/components/projects";
 import FilterCard, { FilterState as FilterCardState } from "@/components/filter-card";
 import TableCard from "@/components/table-card";
 import { toast } from "sonner";
+import GithubContributions from "@/components/GithubContributions";
 
 // Interface untuk project, disesuaikan dengan database
 interface ProjectFile {
@@ -191,6 +192,9 @@ export default function HomePage() {
                     Lihat Selengkapnya
                     <ChevronDown className="h-4 w-4" />
                   </Button>
+
+                  {/* Tambahkan Github Contributions di bawah tombol */}
+                  <GithubContributions />
                 </div>
               </div>
             </div>
