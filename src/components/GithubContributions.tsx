@@ -144,6 +144,7 @@ export default function GithubContributions() {
   const days = calendar.weeks.flatMap((week) => week.contributionDays);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
+  // Calculate month labels with proper alignment
   const monthLabels: { month: string; col: number }[] = [];
   let lastMonth = -1;
   calendar.weeks.forEach((week, weekIndex) => {
@@ -224,45 +225,50 @@ export default function GithubContributions() {
       <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
         {/* Contribution Graph */}
         <div className="mb-4 sm:mb-6">
-          <div className="relative">
-            {/* Month labels - Hidden on mobile, shown on desktop */}
-            <div className="hidden sm:flex mb-2 ml-6 sm:ml-8">
-              {monthLabels.map((label, i) => (
-                <div
-                  key={i}
-                  className="text-xs text-slate-600 dark:text-slate-400 absolute"
-                  style={{ 
-                    left: `${label.col * 11 + 24}px`
-                  }}
-                >
-                  {label.month}
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex gap-0.5 sm:gap-1">
-              {/* Day labels - Adjusted for mobile */}
-              <div className="hidden sm:flex flex-col gap-1 mr-1 sm:mr-2">
-                <div className="h-2.5 sm:h-3"></div>
-                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-2.5 sm:h-3 flex items-center">
-                    <span className="text-xs text-slate-600 dark:text-slate-400 w-6">
-                      {i === 1 ? "Mon" : i === 3 ? "Wed" : i === 5 ? "Fri" : ""}
-                    </span>
-                  </div>
-                ))}
+          {/* Month labels - Above grid */}
+          <div className="hidden md:grid grid-cols-[auto_1fr] gap-1 mb-2">
+            <div className="w-8"></div>
+            <div className="relative">
+              <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${calendar.weeks.length}, minmax(0, 1fr))` }}>
+                {calendar.weeks.map((week, weekIndex) => {
+                  const firstDay = week.contributionDays[0];
+                  const date = firstDay ? new Date(firstDay.date) : null;
+                  const monthLabel = monthLabels.find(m => m.col === weekIndex);
+                  
+                  return (
+                    <div key={weekIndex} className="text-xs text-slate-600 dark:text-slate-400 text-left">
+                      {monthLabel ? monthLabel.month : ''}
+                    </div>
+                  );
+                })}
               </div>
-              
-              {/* Contribution grid - Responsive sizing */}
-              <div className="flex gap-0.5 sm:gap-1 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            </div>
+          </div>
+
+          {/* Main contribution grid */}
+          <div className="grid grid-cols-[auto_1fr] gap-1">
+            {/* Day labels column */}
+            <div className="hidden md:flex flex-col justify-between py-1 pr-2 w-8">
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400"></div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400">Mon</div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400"></div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400">Wed</div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400"></div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400">Fri</div>
+              <div className="h-[11px] flex items-center text-xs text-slate-600 dark:text-slate-400"></div>
+            </div>
+
+            {/* Contribution cells */}
+            <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              <div className="grid gap-1 w-fit" style={{ gridTemplateColumns: `repeat(${calendar.weeks.length}, 11px)` }}>
                 {calendar.weeks.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col gap-0.5 sm:gap-1 flex-shrink-0">
+                  <div key={weekIndex} className="grid gap-1" style={{ gridTemplateRows: 'repeat(7, 11px)' }}>
                     {week.contributionDays.map((day, dayIndex) => (
                       <div
                         key={dayIndex}
                         title={`${new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}: ${day.contributionCount} contributions`}
                         className={`
-                          w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3
+                          w-[11px] h-[11px]
                           rounded-[2px]
                           border border-slate-200/50 dark:border-slate-900/50 
                           hover:border-slate-400 dark:hover:border-slate-600 
@@ -293,12 +299,12 @@ export default function GithubContributions() {
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="text-xs text-slate-600 dark:text-slate-400">Less</span>
-              <div className="flex gap-0.5 sm:gap-1">
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-900"></div>
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-green-300 dark:bg-green-900 border border-slate-200 dark:border-slate-900"></div>
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-green-400 dark:bg-green-700 border border-slate-200 dark:border-slate-900"></div>
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-green-500 dark:bg-green-600 border border-slate-200 dark:border-slate-900"></div>
-                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-green-600 dark:bg-green-500 border border-slate-200 dark:border-slate-900"></div>
+              <div className="flex gap-1">
+                <div className="w-[11px] h-[11px] rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-900"></div>
+                <div className="w-[11px] h-[11px] rounded-[2px] bg-green-300 dark:bg-green-900 border border-slate-200 dark:border-slate-900"></div>
+                <div className="w-[11px] h-[11px] rounded-[2px] bg-green-400 dark:bg-green-700 border border-slate-200 dark:border-slate-900"></div>
+                <div className="w-[11px] h-[11px] rounded-[2px] bg-green-500 dark:bg-green-600 border border-slate-200 dark:border-slate-900"></div>
+                <div className="w-[11px] h-[11px] rounded-[2px] bg-green-600 dark:bg-green-500 border border-slate-200 dark:border-slate-900"></div>
               </div>
               <span className="text-xs text-slate-600 dark:text-slate-400">More</span>
             </div>
