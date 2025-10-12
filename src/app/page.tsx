@@ -18,18 +18,17 @@ import GithubContributions from "@/components/GithubContributions";
 // Interface untuk project, disesuaikan dengan database
 interface ProjectFile {
   id: string;
-  name: string; // dari 'title'
-  uploadDate: string; // dari 'created_at'
+  name: string;
+  uploadDate: string;
   description?: string;
   tags?: string[];
   downloadCount?: number;
   image_url?: string;
   file_url?: string;
-  type?: string[]; // Sesuai dengan database
-  language?: string[]; // Sesuai dengan database
+  type?: string[];
+  language?: string[];
 }
 
-// Menggunakan tipe FilterState dari FilterCard untuk konsistensi
 type FilterState = FilterCardState;
 
 export default function HomePage() {
@@ -39,7 +38,6 @@ export default function HomePage() {
   const [allProjects, setAllProjects] = useState<ProjectFile[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<ProjectFile[]>([]);
   
-  // Inisialisasi state filters agar sesuai dengan FilterCard.tsx
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     type: "All",
@@ -47,7 +45,7 @@ export default function HomePage() {
     sortBy: "Last updated",
   });
 
-  // Check session (tidak ada perubahan)
+  // Check session
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -75,7 +73,7 @@ export default function HomePage() {
     checkSession();
   }, [router]);
 
-  // Fetch projects (pemetaan data diperbaiki)
+  // Fetch projects
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -89,11 +87,11 @@ export default function HomePage() {
           uploadDate: project.created_at,
           description: project.description ?? "",
           tags: project.tags ?? [],
-          downloadCount: project.download_count ?? 0, // sesuaikan nama kolom
+          downloadCount: project.download_count ?? 0,
           image_url: project.image_url,
           file_url: project.file_url,
-          type: project.type ?? [], // Gunakan kolom 'type' dari DB
-          language: project.language ?? [], // Gunakan kolom 'language' dari DB
+          type: project.type ?? [],
+          language: project.language ?? [],
         }));
         
         setAllProjects(transformed);
@@ -108,11 +106,10 @@ export default function HomePage() {
     }
   }, [showDetailView]);
 
-  // Apply filters (logika filter dan sorting diperbaiki)
+  // Apply filters
   useEffect(() => {
     let result = [...allProjects];
 
-    // Search filter
     if (filters.search) {
       result = result.filter((project) =>
         project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -120,21 +117,18 @@ export default function HomePage() {
       );
     }
 
-    // Type filter
     if (filters.type !== "All") {
       result = result.filter((project) => 
         project.type?.includes(filters.type)
       );
     }
 
-    // Language filter
     if (filters.language !== "All") {
       result = result.filter((project) =>
         project.language?.includes(filters.language)
       );
     }
 
-    // Sort
     switch (filters.sortBy) {
       case "Last updated":
       case "Recently created":
@@ -143,7 +137,7 @@ export default function HomePage() {
       case "Name":
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case "Stars": // Diasumsikan 'Stars' sama dengan 'downloadCount'
+      case "Stars":
         result.sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0));
         break;
     }
@@ -181,8 +175,13 @@ export default function HomePage() {
                 <ProfileCard />
               </div>
               <div className="lg:col-span-3 space-y-6">
+                {/* Projects Section */}
                 <Projects />
                 
+                {/* OPSI 1: GitHub Contributions SEBELUM tombol (REKOMENDASI) */}
+                <GithubContributions />
+                
+                {/* Tombol Lihat Selengkapnya */}
                 <div className="flex justify-center pt-4">
                   <Button
                     onClick={handleToggleView}
@@ -192,10 +191,10 @@ export default function HomePage() {
                     Lihat Selengkapnya
                     <ChevronDown className="h-4 w-4" />
                   </Button>
-
-                  {/* Tambahkan Github Contributions di bawah tombol */}
-                  <GithubContributions />
                 </div>
+
+                {/* OPSI 2: GitHub Contributions SETELAH tombol (Posisi Anda Saat Ini) */}
+                {/* <GithubContributions /> */}
               </div>
             </div>
           </section>
@@ -244,12 +243,15 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              {/* Filter Card - Full width di atas */}
+              {/* OPSI 3: GitHub Contributions di Detail View (BONUS) */}
+              <GithubContributions />
+
+              {/* Filter Card */}
               <div className="w-full">
                 <FilterCard onFilterChange={handleFilterChange} />
               </div>
 
-              {/* Table Card - Full width di bawah */}
+              {/* Table Card */}
               <div className="w-full">
                 <TableCard projects={filteredProjects} />
               </div>
