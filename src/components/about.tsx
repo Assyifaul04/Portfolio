@@ -1,6 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { GraduationCap, Users } from "lucide-react";
 
 export default function About() {
+  const educationData = [
+    {
+      year: "2023 - 2026",
+      institution: "Politeknik Negeri Malang",
+      degree: "D3 Teknologi Informasi",
+      organizations: ["Himpunan Mahasiswa Teknologi Informasi (HMTI)"],
+      current: true
+    },
+    {
+      year: "2020 - 2023",
+      institution: "SMK Nahdlatul Thalabah",
+      degree: "Sekolah Menengah Kejuruan",
+      organizations: [],
+      current: false
+    },
+    {
+      year: "2017 - 2020",
+      institution: "MTs Nahdlatul Thalabah",
+      degree: "Madrasah Tsanawiyah",
+      organizations: ["OSIS - Koordinator Kesenian"],
+      current: false
+    }
+  ];
+
   const techStack = [
     // Frontend
     { name: "Next.js", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg", category: "Frontend" },
@@ -50,7 +75,7 @@ export default function About() {
         }
       `}</style>
 
-      <div className="space-y-12">
+      <div className="space-y-16">
         {/* Header */}
         <div className="text-center space-y-4">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
@@ -85,76 +110,101 @@ export default function About() {
           </CardContent>
         </Card>
 
-        {/* Timeline */}
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-8 md:mb-12">
-            Perjalanan Pendidikan
-          </h3>
+        {/* Education Timeline */}
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10 md:mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Perjalanan Pendidikan
+            </h3>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Jejak akademik dan organisasi
+            </p>
+          </div>
           
-          <div className="space-y-6 md:space-y-8 relative">
-            {/* Vertical Line - Hidden on mobile, visible on md+ */}
-            <div className="hidden md:block absolute left-[60px] top-0 bottom-0 w-[2px] border-l-2 border-dashed border-border"></div>
+          <div className="relative">
+            {/* Timeline Line - Desktop Only */}
+            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-primary/50 to-primary transform -translate-x-1/2"></div>
             
-            {/* 2023 - Polinema */}
-            <div className="relative md:pl-24">
-              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
-              <div className="flex items-start gap-4 md:block">
-                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
-                  2023
-                </div>
-                
-                <Card className="border-border flex-1">
-                  <CardContent className="p-4 md:p-6">
-                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">Politeknik Negeri Malang</h4>
-                    <p className="text-sm md:text-base text-muted-foreground mb-4">D3 Teknologi Informasi</p>
-                    
-                    <div className="pl-4 md:pl-6 border-l-2 border-dashed border-border">
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm md:text-base font-semibold text-foreground">Organisasi</p>
-                          <div className="pl-4 md:pl-6 mt-2 space-y-1">
-                            <p className="text-xs md:text-sm text-muted-foreground">• Himpunan Mahasiswa Teknologi Informasi (HMTI)</p>
-                          </div>
-                        </div>
+            <div className="space-y-8 md:space-y-12">
+              {educationData.map((edu, idx) => (
+                <div key={idx} className="relative">
+                  {/* Timeline Dot - Desktop Only */}
+                  <div className="hidden lg:flex absolute left-1/2 top-8 w-4 h-4 rounded-full bg-primary border-4 border-background transform -translate-x-1/2 z-10 shadow-lg"></div>
+                  
+                  {/* Content Card */}
+                  <div className={`lg:grid lg:grid-cols-2 lg:gap-8 ${idx % 2 === 0 ? '' : 'lg:flex-row-reverse'}`}>
+                    {/* Year Badge - Desktop */}
+                    <div className={`hidden lg:flex items-center ${idx % 2 === 0 ? 'justify-end pr-12' : 'lg:col-start-2 justify-start pl-12'}`}>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+                        <span className="text-sm font-bold text-primary">{edu.year}</span>
+                        {edu.current && (
+                          <span className="px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                            Sekarang
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* 2020 - SMK/SMA */}
-            <div className="relative md:pl-24">
-              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
-              <div className="flex items-start gap-4 md:block">
-                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
-                  2020
+                    
+                    {/* Education Card */}
+                    <div className={idx % 2 === 0 ? 'lg:col-start-2' : 'lg:col-start-1 lg:row-start-1'}>
+                      <Card className="border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
+                        <CardContent className="p-5 md:p-6">
+                          {/* Mobile Year Badge */}
+                          <div className="flex items-center gap-2 mb-4 lg:hidden">
+                            <span className="text-sm font-bold text-primary">{edu.year}</span>
+                            {edu.current && (
+                              <span className="px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
+                                Sekarang
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Institution */}
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0 mt-1">
+                              <GraduationCap className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-lg md:text-xl font-bold text-foreground mb-1 leading-tight">
+                                {edu.institution}
+                              </h4>
+                              <p className="text-sm md:text-base text-muted-foreground">
+                                {edu.degree}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Organizations */}
+                          <div className="mt-4 pt-4 border-t border-dashed border-border">
+                            <div className="flex items-start gap-2">
+                              <Users className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs md:text-sm font-semibold text-foreground mb-1">
+                                  Organisasi:
+                                </p>
+                                {edu.organizations.length > 0 ? (
+                                  <ul className="space-y-1">
+                                    {edu.organizations.map((org, orgIdx) => (
+                                      <li key={orgIdx} className="text-xs md:text-sm text-muted-foreground flex items-start gap-2">
+                                        <span className="text-primary mt-1">•</span>
+                                        <span className="flex-1">{org}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-xs md:text-sm text-muted-foreground italic">
+                                    Tidak ada organisasi
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
                 </div>
-                
-                <Card className="border-border flex-1">
-                  <CardContent className="p-4 md:p-6">
-                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">SMK/SMA</h4>
-                    <p className="text-sm md:text-base text-muted-foreground">Pendidikan Menengah</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* 2017 - SMP */}
-            <div className="relative md:pl-24">
-              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
-              <div className="flex items-start gap-4 md:block">
-                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
-                  2017
-                </div>
-                
-                <Card className="border-border flex-1">
-                  <CardContent className="p-4 md:p-6">
-                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">SMP</h4>
-                    <p className="text-sm md:text-base text-muted-foreground">Pendidikan Dasar Tingkat Lanjut</p>
-                  </CardContent>
-                </Card>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -208,7 +258,7 @@ export default function About() {
         <Card className="mx-auto max-w-3xl bg-muted/30 border-border">
           <CardContent className="p-6 md:p-8 text-center">
             <blockquote className="text-lg md:text-xl lg:text-2xl font-medium text-foreground italic leading-relaxed">
-              "Kode yang baik adalah kode yang bisa dibaca dan dipahami oleh manusia,
+              "Kode yang baik adalah kode yang bisa dibaca dan dipahami oleh manusia, 
               bukan hanya mesin."
             </blockquote>
             <p className="mt-3 md:mt-4 text-sm md:text-base text-muted-foreground">— Syn_Taxx</p>
