@@ -274,7 +274,7 @@ export default function Projects() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 px-2 text-slate-500 hover:text-slate-700"
+          className="h-7 px-2 text-slate-500 hover:text-slate-700 text-xs sm:h-8"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -282,8 +282,8 @@ export default function Projects() {
           }}
           title="Download"
         >
-          <Download className="h-4 w-4 mr-1" />
-          <span className="text-xs">Download</span>
+          <Download className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+          <span className="hidden sm:inline text-xs">request</span>
         </Button>
       );
     }
@@ -295,18 +295,18 @@ export default function Projects() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-amber-500 hover:text-amber-700"
+              className="h-7 px-2 text-amber-500 hover:text-amber-700 text-xs sm:h-8"
               title="Menunggu Persetujuan"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <Clock className="h-4 w-4 mr-1" />
-              <span className="text-xs">Pending</span>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline text-xs">Pending</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-64">
+          <PopoverContent side="left" className="w-56 sm:w-64">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-amber-500" />
@@ -328,18 +328,18 @@ export default function Projects() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-red-500 hover:text-red-700"
+              className="h-7 px-2 text-red-500 hover:text-red-700 text-xs sm:h-8"
               title="Permintaan Ditolak"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <AlertCircle className="h-4 w-4 mr-1" />
-              <span className="text-xs">Rejected</span>
+              <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline text-xs">Rejected</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-64">
+          <PopoverContent side="left" className="w-56 sm:w-64">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-red-500" />
@@ -366,7 +366,7 @@ export default function Projects() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-emerald-600 hover:text-emerald-700"
+              className="h-7 px-2 text-emerald-600 hover:text-emerald-700 text-xs sm:h-8"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -374,13 +374,13 @@ export default function Projects() {
               }}
               title="Download Disetujui - Klik untuk mulai"
             >
-              <CheckCircle2 className="h-4 w-4 mr-1" />
-              <span className="text-xs">download</span>
+              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline text-xs">download</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
             side="left"
-            className="w-80"
+            className="w-72 sm:w-80"
             onInteractOutside={(e) => e.preventDefault()}
           >
             <div className="space-y-3">
@@ -444,15 +444,17 @@ export default function Projects() {
                   {downloading === file.id ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Downloading...</span>
+                      <span className="text-xs">Downloading...</span>
                     </>
                   ) : allCompleted ? (
                     <>
-                      <Download className="mr-2 h-4 w-4" /> Download Now
+                      <Download className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Download Now</span>
                     </>
                   ) : (
                     <>
-                      <Clock className="mr-2 h-4 w-4" /> Selesaikan Semua
+                      <Clock className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Selesaikan Semua</span>
                     </>
                   )}
                 </Button>
@@ -468,9 +470,9 @@ export default function Projects() {
 
   if (loading) {
     return (
-      <section className="space-y-6">
+      <section className="space-y-4 sm:space-y-6 px-3 sm:px-0">
         <Skeleton className="h-[100px] w-full rounded-md" />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-[140px] w-full rounded-md" />
           ))}
@@ -480,22 +482,22 @@ export default function Projects() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4 sm:space-y-6 px-3 sm:px-0">
       {/* Header Card */}
       <Card className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-normal text-slate-700 dark:text-slate-200">
+        <CardHeader className="pb-3 px-4 sm:px-6">
+          <CardTitle className="text-sm sm:text-base font-normal text-slate-700 dark:text-slate-200 break-words">
             Assyifaul04 /{" "}
             <span className="font-semibold text-blue-600 dark:text-blue-400">
               README.md
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-4 sm:px-6">
           <div className="flex flex-col items-center justify-center text-center pb-3 border-b border-slate-300 dark:border-slate-700">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🔥</span>
-              <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+              <span className="text-xl sm:text-2xl">🔥</span>
+              <p className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300">
                 Ngoding Dulu, Jagonya Belakangan!
               </p>
             </div>
@@ -505,25 +507,25 @@ export default function Projects() {
 
       {/* Header untuk Pinned Projects */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-normal text-slate-700 dark:text-slate-300">
+        <h3 className="text-sm sm:text-base font-normal text-slate-700 dark:text-slate-300">
           Pinned
         </h3>
-        <Link href="#" className="text-sm text-blue-600 hover:underline">
+        <Link href="#" className="text-xs sm:text-sm text-blue-600 hover:underline">
           Customize your pins
         </Link>
       </div>
 
       {/* Grid Projects */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
         {files.map((file) => (
           <Card
             key={file.id}
             className="flex flex-col border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-colors"
           >
-            <div className="p-4 space-y-3">
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <FileText className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-slate-500 flex-shrink-0" />
                   {file.image_url ? (
                     <Popover
                       open={imagePopoverOpen === file.id}
@@ -533,7 +535,7 @@ export default function Projects() {
                     >
                       <PopoverTrigger asChild>
                         <span
-                          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-xs sm:text-sm"
                           onClick={(e) => {
                             e.preventDefault();
                             handleProjectClick(file.id);
@@ -542,7 +544,7 @@ export default function Projects() {
                           {file.name}
                         </span>
                       </PopoverTrigger>
-                      <PopoverContent className="w-80 p-0" side="top">
+                      <PopoverContent className="w-72 sm:w-80 p-0" side="top">
                         <img
                           src={file.image_url}
                           alt={file.name}
@@ -553,7 +555,7 @@ export default function Projects() {
                   ) : (
                     <Link
                       href={`/projects/${file.id}`}
-                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-xs sm:text-sm"
                     >
                       {file.name}
                     </Link>
@@ -562,7 +564,7 @@ export default function Projects() {
                 {downloadStatuses[file.id] && (
                   <Badge
                     variant="outline"
-                    className={`text-xs flex-shrink-0 ${
+                    className={`text-[10px] sm:text-xs flex-shrink-0 px-1.5 sm:px-2 py-0.5 ${
                       downloadStatuses[file.id].status === "pending"
                         ? "border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950"
                         : downloadStatuses[file.id].status === "approved"
@@ -579,30 +581,30 @@ export default function Projects() {
                 )}
               </div>
 
-              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[32px]">
+              <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[28px] sm:min-h-[32px]">
                 {file.description || "No description available"}
               </p>
 
-              <div className="flex w-full items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-2">
+              <div className="flex w-full items-center justify-between text-[11px] sm:text-xs text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                   {file.tags && file.tags.length > 0 && (
                     <>
                       <span
-                        className={`h-3 w-3 rounded-full ${languageColor(
+                        className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0 ${languageColor(
                           file.tags[0]
                         )}`}
                         title={file.tags[0]}
                       />
-                      <span>{file.tags[0]}</span>
+                      <span className="truncate">{file.tags[0]}</span>
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                   <div
                     className="flex items-center gap-1"
                     title="Download Count"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span>{file.downloadCount ?? 0}</span>
                   </div>
                   {getDownloadButton(file)}
@@ -615,12 +617,12 @@ export default function Projects() {
 
       {/* Empty State */}
       {files.length === 0 && !loading && (
-        <div className="py-20 text-center">
-          <FileText className="mx-auto h-12 w-12 text-slate-400" />
-          <h3 className="mt-2 text-xl font-semibold text-slate-700 dark:text-slate-300">
+        <div className="py-12 sm:py-20 text-center">
+          <FileText className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-slate-400" />
+          <h3 className="mt-2 text-lg sm:text-xl font-semibold text-slate-700 dark:text-slate-300">
             Belum Ada Proyek
           </h3>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">
             Proyek yang diunggah akan muncul di sini.
           </p>
         </div>
