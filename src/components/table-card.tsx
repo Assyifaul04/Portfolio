@@ -297,7 +297,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
         <Button
           variant="outline"
           size="sm"
-          className="h-8 px-3 text-xs font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="h-7 px-2 sm:h-8 sm:px-3 text-xs font-medium border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -305,8 +305,8 @@ export default function TableCard({ projects = [] }: TableCardProps) {
           }}
           title="Request Download"
         >
-          <Download className="h-3.5 w-3.5 mr-1.5" />
-          Request
+          <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1.5" />
+          <span className="hidden sm:inline">Request</span>
         </Button>
       );
     }
@@ -318,18 +318,18 @@ export default function TableCard({ projects = [] }: TableCardProps) {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 text-xs font-medium border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950"
+              className="h-7 px-2 sm:h-8 sm:px-3 text-xs font-medium border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950"
               title="Menunggu Persetujuan"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <Clock className="h-3.5 w-3.5 mr-1.5" />
-              Pending
+              <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Pending</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-64">
+          <PopoverContent side="left" className="w-56 sm:w-64">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-amber-500" />
@@ -351,18 +351,18 @@ export default function TableCard({ projects = [] }: TableCardProps) {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 text-xs font-medium border-red-300 text-red-700 dark:border-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
+              className="h-7 px-2 sm:h-8 sm:px-3 text-xs font-medium border-red-300 text-red-700 dark:border-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
               title="Permintaan Ditolak"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
-              Rejected
+              <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Rejected</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="left" className="w-64">
+          <PopoverContent side="left" className="w-56 sm:w-64">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-red-500" />
@@ -389,7 +389,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 text-xs font-medium border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+              className="h-7 px-2 sm:h-8 sm:px-3 text-xs font-medium border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -397,13 +397,13 @@ export default function TableCard({ projects = [] }: TableCardProps) {
               }}
               title="Download Disetujui - Klik untuk mulai"
             >
-              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-              Download
+              <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
             side="left"
-            className="w-80"
+            className="w-72 sm:w-80"
             onInteractOutside={(e) => e.preventDefault()}
           >
             <div className="space-y-3">
@@ -467,15 +467,17 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                   {downloading === project.id ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      <span>Downloading...</span>
+                      <span className="text-xs">Downloading...</span>
                     </>
                   ) : allCompleted ? (
                     <>
-                      <Download className="mr-2 h-4 w-4" /> Download Now
+                      <Download className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Download Now</span>
                     </>
                   ) : (
                     <>
-                      <Clock className="mr-2 h-4 w-4" /> Selesaikan Semua
+                      <Clock className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Selesaikan Semua</span>
                     </>
                   )}
                 </Button>
@@ -491,13 +493,13 @@ export default function TableCard({ projects = [] }: TableCardProps) {
 
   if (projects.length === 0) {
     return (
-      <div className="text-center py-20 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950">
+      <div className="text-center py-12 sm:py-20 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 mx-3 sm:mx-0">
         <div className="flex flex-col items-center gap-3">
-          <BookOpen className="h-12 w-12 text-slate-300 dark:text-slate-700" />
-          <p className="text-slate-600 dark:text-slate-400 font-medium">
+          <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-slate-300 dark:text-slate-700" />
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
             No repositories found
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-500 px-4">
             Try adjusting your filters or search query
           </p>
         </div>
@@ -506,7 +508,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
   }
 
   return (
-    <div className="space-y-0 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-950">
+    <div className="space-y-0 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-950 mx-3 sm:mx-0">
       {projects.map((project, index) => {
         let statusKey: "completed" | "planned" | "ongoing" = "completed";
         if (project.type?.includes("Pribadi")) {
@@ -518,17 +520,17 @@ export default function TableCard({ projects = [] }: TableCardProps) {
         return (
           <div
             key={project.id}
-            className={`px-6 py-5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors ${
+            className={`px-4 py-4 sm:px-6 sm:py-5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors ${
               index !== projects.length - 1
                 ? "border-b border-slate-200 dark:border-slate-800"
                 : ""
             }`}
           >
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1 min-w-0 space-y-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-slate-400 dark:text-slate-600" />
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6">
+              <div className="flex-1 min-w-0 space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-600 flex-shrink-0" />
                     {project.image_url ? (
                       <Popover
                         open={imagePopoverOpen === project.id}
@@ -538,7 +540,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                       >
                         <PopoverTrigger asChild>
                           <h3
-                            className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                            className="text-base sm:text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer truncate"
                             onClick={(e) => {
                               e.preventDefault();
                               handleProjectClick(project.id);
@@ -547,7 +549,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                             {project.name}
                           </h3>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0" side="top">
+                        <PopoverContent className="w-72 sm:w-80 p-0" side="top">
                           <img
                             src={project.image_url}
                             alt={project.name}
@@ -557,7 +559,7 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                       </Popover>
                     ) : (
                       <Link href={`/projects/${project.id}`}>
-                        <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                        <h3 className="text-base sm:text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer truncate">
                           {project.name}
                         </h3>
                       </Link>
@@ -565,24 +567,24 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                   </div>
                   <Badge
                     variant="outline"
-                    className={`text-xs px-2.5 py-0.5 font-medium ${currentStatus.className}`}
+                    className={`text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 font-medium flex-shrink-0 ${currentStatus.className}`}
                   >
-                    <StatusIcon className="h-3 w-3 mr-1" />
+                    <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                     {currentStatus.label}
                   </Badge>
                 </div>
 
                 {project.description && (
-                  <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                     {project.description}
                   </p>
                 )}
 
-                <div className="flex items-center gap-5 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
+                <div className="flex items-center gap-3 sm:gap-5 text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 flex-wrap">
                   {project.tags && project.tags.length > 0 && (
                     <div className="flex items-center gap-1.5 font-medium">
                       <span
-                        className={`h-3 w-3 rounded-full ${languageColor(
+                        className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full ${languageColor(
                           project.tags[0]
                         )}`}
                       />
@@ -593,17 +595,17 @@ export default function TableCard({ projects = [] }: TableCardProps) {
                     className="flex items-center gap-1.5"
                     title="Download Count"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span className="font-medium">
                       {project.downloadCount ?? 0}
                     </span>
                   </div>
-                  <span className="text-slate-500 dark:text-slate-500">
+                  <span className="text-slate-500 dark:text-slate-500 hidden sm:inline">
                     {formatDate(project.uploadDate)}
                   </span>
                 </div>
               </div>
-              <div className="flex items-start pt-1">
+              <div className="flex items-start sm:pt-1 self-end sm:self-start">
                 {getDownloadButton(project)}
               </div>
             </div>
