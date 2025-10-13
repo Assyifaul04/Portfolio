@@ -3,13 +3,13 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import Providers from "./providers";
-
+import FloatingButtons from "@/components/floating-buttons";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Syn_Taxx | Portfolio & Dashboard",
-  description: "Portfolio dan Dashboard Admin Syn_Taxx",
+  title: "Syn_Taxx | Portfolio",
+  description: "Portfolio Izza",
 };
 
 export default function RootLayout({
@@ -19,9 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      {/* <body className={`${inter.className} bg-background text-foreground`}> */}
       <body className="font-sans bg-background text-foreground">
-        <Providers>{children}</Providers> {/* ← pakai wrapper client */}
+        <Providers>
+          {children}
+          <FloatingButtons />
+        </Providers>
         <Toaster position="top-right" richColors />
       </body>
     </html>
