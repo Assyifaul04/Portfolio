@@ -171,14 +171,18 @@ export default function HomePage() {
         <>
           <section id="projects-section" className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+              {/* ProfileCard - Sticky di desktop, normal di mobile */}
               <div className="lg:col-span-1">
-                <ProfileCard />
+                <div className="lg:sticky lg:top-20">
+                  <ProfileCard />
+                </div>
               </div>
+              
               <div className="lg:col-span-3 space-y-6">
                 {/* Projects Section */}
                 <Projects />
                 
-                {/* OPSI 1: GitHub Contributions SEBELUM tombol (REKOMENDASI) */}
+                {/* GitHub Contributions */}
                 <GithubContributions />
                 
                 {/* Tombol Lihat Selengkapnya */}
@@ -192,9 +196,6 @@ export default function HomePage() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </div>
-
-                {/* OPSI 2: GitHub Contributions SETELAH tombol (Posisi Anda Saat Ini) */}
-                {/* <GithubContributions /> */}
               </div>
             </div>
           </section>
@@ -213,9 +214,9 @@ export default function HomePage() {
         // === TAMPILAN DETAIL (GitHub Repository Style) ===
         <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            {/* Profile Card - Sticky di samping kiri */}
+            {/* Profile Card - Sticky di desktop, normal di mobile */}
             <div className="lg:col-span-1">
-              <div className="sticky top-20">
+              <div className="lg:sticky lg:top-20">
                 <ProfileCard />
               </div>
             </div>
@@ -243,7 +244,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              {/* OPSI 3: GitHub Contributions di Detail View (BONUS) */}
+              {/* GitHub Contributions di Detail View */}
               <GithubContributions />
 
               {/* Filter Card */}
