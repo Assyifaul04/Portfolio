@@ -1,30 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code2, Smartphone, Shield, Palette } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function About() {
-  const expertise = [
-    {
-      icon: <Code2 className="h-6 w-6" />,
-      title: "Web Developer",
-      desc: "Membangun aplikasi web modern dengan fokus pada performa dan UX",
-    },
-    {
-      icon: <Smartphone className="h-6 w-6" />,
-      title: "Mobile Developer",
-      desc: "Mengembangkan aplikasi mobile cross-platform dengan Flutter",
-    },
-    {
-      icon: <Shield className="h-6 w-6" />,
-      title: "Ethical Hacking",
-      desc: "Memahami keamanan siber dan penetration testing",
-    },
-    {
-      icon: <Palette className="h-6 w-6" />,
-      title: "UI/UX Enthusiast",
-      desc: "Menciptakan interface yang intuitif dan menarik",
-    },
-  ];
-
   const techStack = [
     // Frontend
     { name: "Next.js", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg", category: "Frontend" },
@@ -52,7 +28,6 @@ export default function About() {
     { name: "Docker", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg", category: "Tools" },
   ];
 
-  // Duplicate for infinite scroll (triple untuk lebih smooth)
   const duplicatedTechStack = [...techStack, ...techStack, ...techStack];
 
   return (
@@ -78,31 +53,31 @@ export default function About() {
       <div className="space-y-12">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
             Tentang Saya
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base md:text-lg">
             Mari berkenalan lebih dekat
           </p>
         </div>
 
         {/* About Me Card */}
         <Card className="mx-auto max-w-4xl border-border">
-          <CardContent className="p-8 md:p-12">
-            <div className="space-y-6">
-              <p className="text-lg text-foreground leading-relaxed">
+          <CardContent className="p-6 md:p-8 lg:p-12">
+            <div className="space-y-4 md:space-y-6">
+              <p className="text-base md:text-lg text-foreground leading-relaxed">
                 Halo! Saya <span className="font-bold text-primary">Syn_Taxx</span>, seorang
                 developer yang suka ngulik coding, belajar hal baru, dan membangun
                 aplikasi seru 🚀.
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Perjalanan saya di dunia programming dimulai dari rasa penasaran yang tinggi
                 terhadap bagaimana aplikasi dan website bekerja. Dari situ, saya mulai
                 eksplorasi berbagai teknologi, dari web development, mobile apps, hingga
                 security. Moto saya adalah
                 <span className="italic font-medium text-foreground"> "ngoding dulu, jagonya belakangan."</span>
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Saya percaya bahwa setiap baris kode adalah kesempatan untuk belajar sesuatu
                 yang baru dan menciptakan sesuatu yang bermanfaat.
               </p>
@@ -110,43 +85,100 @@ export default function About() {
           </CardContent>
         </Card>
 
-        {/* Expertise Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {expertise.map((item, idx) => (
-            <Card key={idx} className="hover:shadow-lg transition-shadow border-border">
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="p-3 rounded-full bg-primary/10 text-primary">
-                    {item.icon}
-                  </div>
-                  <h3 className="font-semibold text-foreground">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+        {/* Timeline */}
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-8 md:mb-12">
+            Perjalanan Pendidikan
+          </h3>
+          
+          <div className="space-y-6 md:space-y-8 relative">
+            {/* Vertical Line - Hidden on mobile, visible on md+ */}
+            <div className="hidden md:block absolute left-[60px] top-0 bottom-0 w-[2px] border-l-2 border-dashed border-border"></div>
+            
+            {/* 2023 - Polinema */}
+            <div className="relative md:pl-24">
+              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
+              <div className="flex items-start gap-4 md:block">
+                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
+                  2023
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <Card className="border-border flex-1">
+                  <CardContent className="p-4 md:p-6">
+                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">Politeknik Negeri Malang</h4>
+                    <p className="text-sm md:text-base text-muted-foreground mb-4">D3 Teknologi Informasi</p>
+                    
+                    <div className="pl-4 md:pl-6 border-l-2 border-dashed border-border">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm md:text-base font-semibold text-foreground">Organisasi</p>
+                          <div className="pl-4 md:pl-6 mt-2 space-y-1">
+                            <p className="text-xs md:text-sm text-muted-foreground">• Himpunan Mahasiswa Teknologi Informasi (HMTI)</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* 2020 - SMK/SMA */}
+            <div className="relative md:pl-24">
+              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
+              <div className="flex items-start gap-4 md:block">
+                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
+                  2020
+                </div>
+                
+                <Card className="border-border flex-1">
+                  <CardContent className="p-4 md:p-6">
+                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">SMK/SMA</h4>
+                    <p className="text-sm md:text-base text-muted-foreground">Pendidikan Menengah</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* 2017 - SMP */}
+            <div className="relative md:pl-24">
+              <div className="hidden md:block absolute left-[49px] top-2 w-6 h-6 rounded-full bg-primary border-4 border-background"></div>
+              <div className="flex items-start gap-4 md:block">
+                <div className="flex-shrink-0 md:absolute md:left-0 md:top-3 text-sm md:text-base font-bold text-primary md:text-muted-foreground">
+                  2017
+                </div>
+                
+                <Card className="border-border flex-1">
+                  <CardContent className="p-4 md:p-6">
+                    <h4 className="text-lg md:text-xl font-bold text-foreground mb-2">SMP</h4>
+                    <p className="text-sm md:text-base text-muted-foreground">Pendidikan Dasar Tingkat Lanjut</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Tech Stack Marquee */}
         <div className="space-y-6">
-          <h3 className="text-3xl font-bold text-center text-foreground">
+          <h3 className="text-2xl md:text-3xl font-bold text-center text-foreground">
             Tech Stack & Tools
           </h3>
           
-          <div className="relative overflow-hidden bg-card border border-border rounded-lg py-8">
+          <div className="relative overflow-hidden bg-card border border-border rounded-lg py-6 md:py-8">
             {/* Gradient Overlays */}
-            <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background via-background/80 to-transparent z-10 pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background via-background/80 to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-background via-background/80 to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-background via-background/80 to-transparent z-10 pointer-events-none"></div>
             
             {/* Marquee Container */}
             <div className="flex whitespace-nowrap animate-marquee">
               {duplicatedTechStack.map((tech, idx) => (
                 <div
                   key={idx}
-                  className="inline-flex items-center mx-4 px-5 py-3 bg-muted/50 rounded-lg hover:bg-muted transition-all duration-300 group"
+                  className="inline-flex items-center mx-2 md:mx-4 px-3 md:px-5 py-2 md:py-3 bg-muted/50 rounded-lg hover:bg-muted transition-all duration-300 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center bg-background rounded-lg p-2 group-hover:scale-110 transition-transform duration-300">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-background rounded-lg p-1.5 md:p-2 group-hover:scale-110 transition-transform duration-300">
                       <img 
                         src={tech.logo} 
                         alt={tech.name}
@@ -154,10 +186,10 @@ export default function About() {
                       />
                     </div>
                     <div className="text-left">
-                      <div className="font-semibold text-foreground text-sm">
+                      <div className="font-semibold text-foreground text-xs md:text-sm">
                         {tech.name}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[10px] md:text-xs text-muted-foreground">
                         {tech.category}
                       </div>
                     </div>
@@ -167,19 +199,19 @@ export default function About() {
             </div>
           </div>
           
-          <p className="text-center text-sm text-muted-foreground italic">
+          <p className="text-center text-xs md:text-sm text-muted-foreground italic">
             Hover untuk pause • Scroll otomatis berjalan ke kiri
           </p>
         </div>
 
         {/* Quote Card */}
         <Card className="mx-auto max-w-3xl bg-muted/30 border-border">
-          <CardContent className="p-8 text-center">
-            <blockquote className="text-xl md:text-2xl font-medium text-foreground italic">
-              "Kode yang baik adalah kode yang bisa dibaca dan dipahami oleh manusia, 
+          <CardContent className="p-6 md:p-8 text-center">
+            <blockquote className="text-lg md:text-xl lg:text-2xl font-medium text-foreground italic leading-relaxed">
+              "Kode yang baik adalah kode yang bisa dibaca dan dipahami oleh manusia,
               bukan hanya mesin."
             </blockquote>
-            <p className="mt-4 text-muted-foreground">— Syn_Taxx</p>
+            <p className="mt-3 md:mt-4 text-sm md:text-base text-muted-foreground">— Syn_Taxx</p>
           </CardContent>
         </Card>
       </div>
