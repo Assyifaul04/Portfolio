@@ -1,5 +1,4 @@
 "use client";
-
 import Chatbox from "@/components/chatbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +10,6 @@ import { useState } from "react";
 
 export default function FloatingButtons() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-
   return (
     <>
       {/* Floating Chat Button */}
@@ -24,7 +22,6 @@ export default function FloatingButtons() {
           <MessageCircle className="h-6 w-6 text-white dark:text-slate-900" />
         </Button>
       </div>
-
       {/* Chat Dialog */}
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
