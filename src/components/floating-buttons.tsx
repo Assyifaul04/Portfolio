@@ -1,12 +1,13 @@
 "use client";
-import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+
+import Chatbox from "@/components/chatbox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
+  DialogContent
 } from "@/components/ui/dialog";
-import Chatbox from "@/components/chatbox";
+import { MessageCircle } from "lucide-react";
+import { useState } from "react";
 
 export default function FloatingButtons() {
   const [isChatOpen, setIsChatOpen] = useState(false);
