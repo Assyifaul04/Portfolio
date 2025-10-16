@@ -22,7 +22,6 @@ export default function Chatbox() {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -37,33 +36,33 @@ export default function Chatbox() {
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
-  
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       sender: "user",
       timestamp: new Date(),
     };
-  
+
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-  
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: inputValue }),
       });
-  
+
       const data = await res.json();
-  
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.reply || "Saya tidak mengerti maksud Anda",
+        text: data.reply || "Saya tidak mengerti maksud Anda 😅",
         sender: "bot",
         timestamp: new Date(),
       };
-  
+
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
       const errorMsg: Message = {
@@ -75,7 +74,6 @@ export default function Chatbox() {
       setMessages((prev) => [...prev, errorMsg]);
     }
   };
-  
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -103,10 +101,10 @@ export default function Chatbox() {
       </div>
 
       {/* Messages Area */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-4"
-        style={{ scrollBehavior: 'smooth' }}
+        style={{ scrollBehavior: "smooth" }}
       >
         <div className="space-y-4">
           {messages.map((message) => (
@@ -139,7 +137,6 @@ export default function Chatbox() {
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 

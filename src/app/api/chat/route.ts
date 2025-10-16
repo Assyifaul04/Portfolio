@@ -10,19 +10,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pesan kosong." }, { status: 400 });
     }
 
-    // Ambil project dari Supabase
+    // Ambil data project dari Supabase
     const { data: projects } = await supabaseAdmin
       .from("projects")
       .select("title, description, tags, language, file_url");
 
-    // Siapkan konteks
     const context = `
-Kamu adalah asisten AI ramah. Tugasmu:
-1. Jawablah secara manusiawi, hangat, dan natural dalam bahasa Indonesia.
-2. Jika user menanyakan project yang cocok, gunakan data di bawah ini.
-3. Jangan jawab terlalu formal.
+Kamu adalah asisten AI yang ramah dan membantu. Gunakan bahasa Indonesia santai tapi sopan.
+Jika user bertanya soal project, rekomendasikan dari daftar berikut:
 
-Daftar project di database:
 ${projects
   ?.map(
     (p) =>
@@ -33,9 +29,8 @@ ${projects
   .join("\n")}
 `;
 
-    // Hubungkan ke Gemini
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY_GEMINI || "");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY_GEMINI!);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const result = await model.generateContent(`${context}\n\nUser: ${message}`);
     const reply = result.response.text();
@@ -43,10 +38,10 @@ ${projects
     return NextResponse.json({ reply });
   } catch (error: any) {
     console.error("Chat Error:", error);
-    // fallback jika error
+    // fallback jika API gagal
     return NextResponse.json({
       reply:
-        "Maaf, saya tidak bisa menghubungi server AI sekarang. Tapi kamu bisa ceritakan project seperti apa yang kamu inginkan, nanti saya bantu rekomendasikan dari database!",
+        "Maaf, server AI gagal merespons 😅. Kamu bisa ceritakan project seperti apa yang diinginkan, nanti saya bantu rekomendasikan dari database!",
     });
   }
 }
