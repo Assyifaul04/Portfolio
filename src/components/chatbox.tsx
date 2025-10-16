@@ -27,7 +27,8 @@ export default function Chatbox() {
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
     }
   };
 
@@ -35,49 +36,48 @@ export default function Chatbox() {
     scrollToBottom();
   }, [messages]);
 
-// ganti bagian handleSendMessage di komponen Chatbox
-const handleSendMessage = async () => {
-  if (!inputValue.trim()) return;
-
-  const newMessage: Message = {
-    id: Date.now().toString(),
-    text: inputValue,
-    sender: "user",
-    timestamp: new Date(),
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+  
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: inputValue,
+      sender: "user",
+      timestamp: new Date(),
+    };
+  
+    setMessages((prev) => [...prev, newMessage]);
+    setInputValue("");
+  
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: inputValue }),
+      });
+  
+      const data = await res.json();
+  
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: data.reply || "Maaf, saya tidak mengerti pertanyaan Anda.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+  
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (error) {
+      console.error(error);
+      const errorResponse: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "Terjadi kesalahan saat menghubungi AI.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    }
   };
-
-  setMessages((prev) => [...prev, newMessage]);
-  setInputValue("");
-
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: inputValue }),
-    });
-
-    const data = await res.json();
-
-    const botResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      text: data.reply || "Maaf, saya tidak mengerti pertanyaan Anda.",
-      sender: "bot",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, botResponse]);
-  } catch (error) {
-    console.error(error);
-    const errorResponse: Message = {
-      id: (Date.now() + 2).toString(),
-      text: "Terjadi kesalahan saat menghubungi AI.",
-      sender: "bot",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, errorResponse]);
-  }
-};
-
+  
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -105,10 +105,10 @@ const handleSendMessage = async () => {
       </div>
 
       {/* Messages Area */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-4"
-        style={{ scrollBehavior: 'smooth' }}
+        style={{ scrollBehavior: "smooth" }}
       >
         <div className="space-y-4">
           {messages.map((message) => (
