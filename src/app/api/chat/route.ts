@@ -46,7 +46,7 @@ ${projects
     // fallback jika error
     return NextResponse.json({
       reply:
-        "Maaf, saya tidak bisa menghubungi server AI sekarang 😅. Tapi kamu bisa ceritakan project seperti apa yang kamu inginkan, nanti saya bantu rekomendasikan dari database!",
+        "Maaf, saya tidak bisa menghubungi server AI sekarang. Tapi kamu bisa ceritakan project seperti apa yang kamu inginkan, nanti saya bantu rekomendasikan dari database!",
     });
   }
 }
