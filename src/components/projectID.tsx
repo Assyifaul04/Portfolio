@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Package,
   Code2,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -86,6 +87,7 @@ export default function ProjectID() {
     "none" | "pending" | "approved" | "rejected"
   >("none");
   const [showDownloadPopover, setShowDownloadPopover] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const { setHasNewDownload } = useDownloadNotification();
 
   const socialLinks = [
@@ -207,25 +209,39 @@ export default function ProjectID() {
       return;
     }
 
-    if (!project?.file_url) {
-      toast.error("File tidak tersedia");
+    if (!project) {
+      toast.error("Data proyek tidak tersedia");
       return;
     }
 
     try {
+      setDownloading(true);
+      const toastId = toast.loading("Mengunduh file...");
+
+      const response = await fetch(`/api/projects/${project.id}`);
+      if (!response.ok) throw new Error("Gagal mengunduh file");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = project.file_url;
+      link.href = url;
       link.download = project.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      toast.success("Download dimulai!");
-      setRequirements({ instagram: false, tiktok: false, youtube: false });
-      setShowDownloadPopover(false);
+      toast.success("Download berhasil!", { id: toastId });
       setHasNewDownload(true);
+      setShowDownloadPopover(false);
+      
+      // Reset requirements setelah download berhasil
+      setRequirements({ instagram: false, tiktok: false, youtube: false });
     } catch (err: any) {
       toast.error("Gagal download: " + err.message);
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -469,7 +485,11 @@ export default function ProjectID() {
                       Download Approved
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" side="left">
+                  <PopoverContent 
+                    className="w-80" 
+                    side="left"
+                    onInteractOutside={(e) => e.preventDefault()}
+                  >
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -478,66 +498,82 @@ export default function ProjectID() {
                         </p>
                       </div>
 
-                      <div className="space-y-2 rounded-lg border bg-muted/50 p-3">
-                        {socialLinks.map(({ key, url, label, icon: Icon }) => {
-                          const isCompleted =
-                            requirements[key as keyof typeof requirements];
-                          return (
-                            <div
-                              key={key}
-                              className={`flex w-full items-center justify-between rounded-md p-2 text-xs font-medium transition-colors ${
-                                isCompleted
-                                  ? "cursor-default bg-emerald-500/10 text-emerald-600"
-                                  : "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
-                              }`}
-                              onClick={async () => {
-                                if (!isCompleted && session?.user?.email) {
-                                  setRequirements((p) => ({
-                                    ...p,
-                                    [key]: true,
-                                  }));
-                                  await fetch("/api/follows", {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                      user_id: session.user.email,
-                                      platform: key,
-                                      is_followed: true,
-                                    }),
-                                  });
-                                  window.open(
-                                    url!,
-                                    "_blank",
-                                    "noopener,noreferrer"
-                                  );
-                                }
-                              }}
-                            >
-                              <span className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" /> {label}
-                              </span>
-                              {isCompleted && (
-                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                              )}
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-3 rounded-lg border bg-muted/50 p-3">
+                        <p className="text-xs font-medium text-foreground">
+                          Selesaikan persyaratan untuk lanjut:
+                        </p>
+                        <div className="space-y-2">
+                          {socialLinks.map(({ key, url, label, icon: Icon }) => {
+                            const isCompleted =
+                              requirements[key as keyof typeof requirements];
+                            return (
+                              <div
+                                key={key}
+                                className={`flex w-full items-center justify-between rounded-md p-2 text-xs font-medium transition-colors ${
+                                  isCompleted
+                                    ? "cursor-default bg-emerald-500/10 text-emerald-600"
+                                    : "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+                                }`}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!isCompleted && session?.user?.email) {
+                                    setRequirements((p) => ({
+                                      ...p,
+                                      [key]: true,
+                                    }));
+                                    await fetch("/api/follows", {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        user_id: session.user.email,
+                                        platform: key,
+                                        is_followed: true,
+                                      }),
+                                    });
+                                    window.open(
+                                      url!,
+                                      "_blank",
+                                      "noopener,noreferrer"
+                                    );
+                                  }
+                                }}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" /> {label}
+                                </span>
+                                {isCompleted && (
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
 
                         <Button
-                          onClick={handleFinalDownload}
-                          disabled={!allCompleted}
-                          className="w-full mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFinalDownload();
+                          }}
+                          disabled={!allCompleted || downloading}
+                          className="w-full"
                           size="sm"
                         >
-                          {allCompleted ? (
+                          {downloading ? (
                             <>
-                              <Download className="mr-2 h-4 w-4" /> Download Now
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <span className="text-xs">Downloading...</span>
+                            </>
+                          ) : allCompleted ? (
+                            <>
+                              <Download className="mr-2 h-4 w-4" />
+                              <span className="text-xs">Download Now</span>
                             </>
                           ) : (
                             <>
-                              <Clock className="mr-2 h-4 w-4" /> Complete All
+                              <Clock className="mr-2 h-4 w-4" />
+                              <span className="text-xs">Selesaikan Semua</span>
                             </>
                           )}
                         </Button>
@@ -549,7 +585,7 @@ export default function ProjectID() {
             </CardContent>
           </Card>
 
-          {/* Project Type Card - BARU */}
+          {/* Project Type Card */}
           {project.type && project.type.length > 0 && (
             <Card className="border-slate-300 dark:border-slate-700">
               <CardHeader className="pb-3">
@@ -570,7 +606,7 @@ export default function ProjectID() {
             </Card>
           )}
 
-          {/* Languages Card - UPDATED */}
+          {/* Languages Card */}
           {project.language && project.language.length > 0 && (
             <Card className="border-slate-300 dark:border-slate-700">
               <CardHeader className="pb-3">
@@ -604,7 +640,7 @@ export default function ProjectID() {
             </Card>
           )}
 
-          {/* Tags Card - BARU */}
+          {/* Tags Card */}
           {project.tags && project.tags.length > 0 && (
             <Card className="border-slate-300 dark:border-slate-700">
               <CardHeader className="pb-3">

@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   const { data, error } = await supabase
     .from("downloads")
@@ -18,7 +18,6 @@ export async function GET(
 
   return NextResponse.json(data);
 }
-
 
 export async function PATCH(
   req: NextRequest,
