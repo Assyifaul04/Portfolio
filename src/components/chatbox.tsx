@@ -2,9 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Download, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { MessageCircle, Send, Download, FileText } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 
 interface ProjectData {
   id: string;
@@ -25,6 +31,52 @@ interface Message {
   projects?: ProjectData[];
 }
 
+// Helper function untuk warna language
+const languageColor = (lang?: string): string => {
+  const normalized = lang?.toLowerCase().trim();
+  switch (normalized) {
+    case "next.js":
+    case "nextjs":
+      return "bg-slate-500";
+    case "golang":
+    case "go":
+      return "bg-cyan-400";
+    case "typescript":
+    case "ts":
+      return "bg-blue-500";
+    case "javascript":
+    case "js":
+      return "bg-yellow-400";
+    case "java":
+      return "bg-orange-500";
+    case "dart":
+      return "bg-teal-500";
+    case "blade":
+      return "bg-red-500";
+    case "html":
+      return "bg-orange-600";
+    case "css":
+      return "bg-blue-400";
+    case "python":
+    case "py":
+      return "bg-blue-600";
+    case "php":
+      return "bg-indigo-500";
+    case "ruby":
+      return "bg-red-600";
+    case "rust":
+      return "bg-orange-700";
+    case "c++":
+    case "cpp":
+      return "bg-pink-500";
+    case "c#":
+    case "csharp":
+      return "bg-purple-600";
+    default:
+      return "bg-gray-500";
+  }
+};
+
 export default function Chatbox() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -36,6 +88,8 @@ export default function Chatbox() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
+  const [clickCount, setClickCount] = useState<Record<string, number>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -47,6 +101,22 @@ export default function Chatbox() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleProjectClick = (projectId: string) => {
+    const currentCount = clickCount[projectId] || 0;
+
+    if (currentCount === 0) {
+      setImagePopoverOpen(projectId);
+      setClickCount({ ...clickCount, [projectId]: 1 });
+      setTimeout(() => {
+        setClickCount((prev) => ({ ...prev, [projectId]: 0 }));
+      }, 500);
+    } else if (currentCount === 1) {
+      window.open(`/projects/${projectId}`, "_blank");
+      setClickCount({ ...clickCount, [projectId]: 0 });
+      setImagePopoverOpen(null);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -73,7 +143,7 @@ export default function Chatbox() {
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.reply || "Saya tidak mengerti maksud Anda",
+        text: data.reply || "Saya tidak mengerti maksud Anda 😅",
         sender: "bot",
         timestamp: new Date(),
         projects: data.projects || [],
@@ -133,78 +203,119 @@ export default function Chatbox() {
               }`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`max-w-[85%] rounded-lg px-4 py-2 ${
                   message.sender === "user"
                     ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                
+
                 {/* Project Cards */}
                 {message.projects && message.projects.length > 0 && (
-                  <div className="mt-3 space-y-3">
+                  <div className="mt-3 space-y-2">
                     {message.projects.map((project) => (
-                      <div
+                      <Card
                         key={project.id}
-                        className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
+                        className="flex flex-col border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-colors bg-white dark:bg-slate-900"
                       >
-                        {/* Project Image */}
-                        {project.image_url && (
-                          <div className="relative w-full h-32">
-                            <Image
-                              src={project.image_url}
-                              alt={project.title}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 100vw, 400px"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Project Info */}
-                        <div className="p-3">
-                          <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-1">
-                            {project.title}
-                          </h4>
-                          {project.description && (
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
-                              {project.description}
-                            </p>
-                          )}
-                          
-                          {/* Tags */}
-                          {project.language && project.language.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {project.language.slice(0, 3).map((lang, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-xs px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded"
+                        <div className="p-3 space-y-2">
+                          {/* Title with Icon */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <FileText className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                              {project.image_url ? (
+                                <Popover
+                                  open={imagePopoverOpen === project.id}
+                                  onOpenChange={(open) => {
+                                    if (!open) setImagePopoverOpen(null);
+                                  }}
                                 >
-                                  {lang}
-                                </span>
-                              ))}
+                                  <PopoverTrigger asChild>
+                                    <span
+                                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleProjectClick(project.id);
+                                      }}
+                                    >
+                                      {project.title}
+                                    </span>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    className="w-72 p-0"
+                                    side="top"
+                                  >
+                                    <img
+                                      src={project.image_url}
+                                      alt={project.title}
+                                      className="rounded-md object-cover w-full"
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              ) : (
+                                <a
+                                  href={`/projects/${project.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                                >
+                                  {project.title}
+                                </a>
+                              )}
                             </div>
-                          )}
-                          
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 mt-2">
-                            <a
-                              href={project.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-slate-900 dark:text-slate-100 hover:underline"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              Lihat Project
-                            </a>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                              <Download className="w-3 h-3" />
-                              {project.download_count}
-                            </span>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[32px]">
+                            {project.description || "No description available"}
+                          </p>
+
+                          {/* Footer: Language & Download */}
+                          <div className="flex w-full items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {project.language &&
+                                project.language.length > 0 && (
+                                  <>
+                                    <span
+                                      className={`h-3 w-3 rounded-full flex-shrink-0 ${languageColor(
+                                        project.language[0]
+                                      )}`}
+                                      title={project.language[0]}
+                                    />
+                                    <span className="truncate">
+                                      {project.language[0]}
+                                    </span>
+                                  </>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <div
+                                className="flex items-center gap-1"
+                                title="Download Count"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span>{project.download_count ?? 0}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-slate-500 hover:text-slate-700 text-xs"
+                                onClick={() =>
+                                  window.open(
+                                    `/projects/${project.id}`,
+                                    "_blank"
+                                  )
+                                }
+                                title="Lihat Detail"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                <span className="hidden sm:inline">Detail</span>
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
                 )}
@@ -224,15 +335,24 @@ export default function Chatbox() {
               </div>
             </div>
           ))}
-          
+
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-slate-100 dark:bg-slate-800 rounded-lg px-4 py-2">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  <div
+                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></div>
                 </div>
               </div>
             </div>
