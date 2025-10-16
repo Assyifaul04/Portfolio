@@ -1,8 +1,9 @@
 // app/api/follows/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/authOptions";
+import { supabase } from "@/lib/supabaseClient";
 
 export async function GET(req: NextRequest) {
   try {

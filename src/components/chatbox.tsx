@@ -35,30 +35,49 @@ export default function Chatbox() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+// ganti bagian handleSendMessage di komponen Chatbox
+const handleSendMessage = async () => {
+  if (!inputValue.trim()) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: "user",
+  const newMessage: Message = {
+    id: Date.now().toString(),
+    text: inputValue,
+    sender: "user",
+    timestamp: new Date(),
+  };
+
+  setMessages((prev) => [...prev, newMessage]);
+  setInputValue("");
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: inputValue }),
+    });
+
+    const data = await res.json();
+
+    const botResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: data.reply || "Maaf, saya tidak mengerti pertanyaan Anda.",
+      sender: "bot",
       timestamp: new Date(),
     };
 
-    setMessages([...messages, newMessage]);
-    setInputValue("");
+    setMessages((prev) => [...prev, botResponse]);
+  } catch (error) {
+    console.error(error);
+    const errorResponse: Message = {
+      id: (Date.now() + 2).toString(),
+      text: "Terjadi kesalahan saat menghubungi AI.",
+      sender: "bot",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, errorResponse]);
+  }
+};
 
-    // Simulasi respons bot
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Terima kasih atas pesan Anda! Saya akan segera merespons.",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botResponse]);
-    }, 1000);
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
