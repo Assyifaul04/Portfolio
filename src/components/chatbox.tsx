@@ -27,8 +27,7 @@ export default function Chatbox() {
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop =
-        scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   };
 
@@ -39,14 +38,14 @@ export default function Chatbox() {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
   
-    const newMessage: Message = {
+    const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       sender: "user",
       timestamp: new Date(),
     };
   
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
   
     try {
@@ -58,23 +57,22 @@ export default function Chatbox() {
   
       const data = await res.json();
   
-      const botResponse: Message = {
+      const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.reply || "Maaf, saya tidak mengerti pertanyaan Anda.",
+        text: data.reply || "Saya tidak mengerti maksud Anda",
         sender: "bot",
         timestamp: new Date(),
       };
   
-      setMessages((prev) => [...prev, botResponse]);
-    } catch (error) {
-      console.error(error);
-      const errorResponse: Message = {
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      const errorMsg: Message = {
         id: (Date.now() + 2).toString(),
-        text: "Terjadi kesalahan saat menghubungi AI.",
+        text: "Terjadi kesalahan saat menghubungi server.",
         sender: "bot",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorResponse]);
+      setMessages((prev) => [...prev, errorMsg]);
     }
   };
   
@@ -105,10 +103,10 @@ export default function Chatbox() {
       </div>
 
       {/* Messages Area */}
-      <div
+      <div 
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-4"
-        style={{ scrollBehavior: "smooth" }}
+        style={{ scrollBehavior: 'smooth' }}
       >
         <div className="space-y-4">
           {messages.map((message) => (
