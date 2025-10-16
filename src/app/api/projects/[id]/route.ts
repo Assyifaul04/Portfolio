@@ -3,24 +3,24 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
-
-
+  const { id } = params;
   const { data: project, error } = await supabaseAdmin
     .from("projects")
-    .select("file_url, download_count")
+    .select("*")
     .eq("id", id)
     .single();
 
-  if (error || !project?.file_url)
+  if (error || !project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
 
   await supabaseAdmin
     .from("projects")
     .update({ download_count: (project.download_count ?? 0) + 1 })
     .eq("id", id);
 
-  return NextResponse.redirect(project.file_url);
+  return NextResponse.json(project);
 }
+
