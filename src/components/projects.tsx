@@ -242,7 +242,7 @@ export default function Projects() {
       setDownloading(projectId);
       const toastId = toast.loading("Mengunduh file...");
 
-      const response = await fetch(`/api/projects/${projectId}`);
+      const response = await fetch(`/api/projects/${projectId}?action=download`);
       if (!response.ok) throw new Error("Gagal mengunduh file");
 
       const blob = await response.blob();
