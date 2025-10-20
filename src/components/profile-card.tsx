@@ -1,90 +1,80 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Building, Mail, Users } from "lucide-react";
 
-interface GitHubUser {
-  login: string;
+interface ProfileData {
   name: string;
-  avatar_url: string;
+  login: string;
+  avatarUrl: string;
   bio: string | null;
   company: string | null;
   email: string | null;
-  followers: number;
-  following: number;
-  html_url: string;
+  followers: { totalCount: number };
+  following: { totalCount: number };
 }
 
-async function getGitHubUser(): Promise<GitHubUser | null> {
-  try {
-    const token = process.env.GITHUB_TOKEN;
-    
-    if (!token) {
-      console.error("GITHUB_TOKEN tidak ditemukan di .env.local");
-      return null;
+export default function ProfileCard() {
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const response = await fetch('/api/github?type=profile');
+        const data = await response.json();
+        
+        if (data.data?.user) {
+          setProfile(data.data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    const response = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github.v3+json",
-      },
-      next: { revalidate: 3600 }, // Cache selama 1 jam
-    });
+    fetchProfile();
+  }, []);
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching GitHub user:", error);
-    return null;
+  if (loading) {
+    return (
+      <aside className="space-y-5">
+        <div className="h-64 w-64 lg:h-96 lg:w-full bg-muted animate-pulse rounded-full" />
+        <div className="space-y-2">
+          <div className="h-8 bg-muted animate-pulse rounded w-3/4" />
+        </div>
+      </aside>
+    );
   }
-}
-
-export default async function ProfileCard() {
-  const user = await getGitHubUser();
-
-  // Fallback data jika API gagal
-  const displayData = {
-    name: user?.name || "Assyifaul Izza",
-    avatar: user?.avatar_url || "/assets/avatar.jpg",
-    username: user?.login || "assyifaulizza",
-    company: user?.company || "@polinema",
-    email: user?.email || "tapirizza@gmail.com",
-    followers: user?.followers || 4,
-    following: user?.following || 4,
-    initials: user?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "ST",
-  };
 
   return (
     <aside className="space-y-5">
       {/* Avatar dan Nama */}
       <div className="relative">
         <Avatar className="h-64 w-64 rounded-full border-2 border-border lg:h-auto lg:w-full">
-          <AvatarImage src={displayData.avatar} alt="Profile Avatar" />
-          <AvatarFallback>{displayData.initials}</AvatarFallback>
+          <AvatarImage 
+            src={profile?.avatarUrl || "/assets/avatar.jpg"} 
+            alt="Profile Avatar" 
+          />
+          <AvatarFallback>
+            {profile?.name?.substring(0, 2).toUpperCase() || "ST"}
+          </AvatarFallback>
         </Avatar>
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground">{displayData.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {profile?.name || "Assyifaul Izza"}
+        </h1>
       </div>
 
-      <Button variant="outline" className="w-full" asChild>
-        <a
-          href={user?.html_url || `https://github.com/${displayData.username}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          View GitHub Profile
-        </a>
+      <Button variant="outline" className="w-full">
+        Edit profile
       </Button>
 
       <Separator />
@@ -95,28 +85,26 @@ export default async function ProfileCard() {
           <Users className="h-4 w-4 flex-shrink-0" />
           <span>
             <span className="font-semibold text-foreground">
-              {displayData.followers}
-            </span>{" "}
-            followers
+              {profile?.followers.totalCount || 0}
+            </span> followers
             <span className="mx-1">•</span>
             <span className="font-semibold text-foreground">
-              {displayData.following}
-            </span>{" "}
-            following
+              {profile?.following.totalCount || 0}
+            </span> following
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <Building className="h-4 w-4 flex-shrink-0" />
-          <span className="font-semibold text-foreground">
-            {displayData.company}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Mail className="h-4 w-4 flex-shrink-0" />
-          <span className="font-semibold text-foreground">
-            {displayData.email}
-          </span>
-        </div>
+        {profile?.company && (
+          <div className="flex items-center gap-3">
+            <Building className="h-4 w-4 flex-shrink-0" />
+            <span className="font-semibold text-foreground">{profile.company}</span>
+          </div>
+        )}
+        {profile?.email && (
+          <div className="flex items-center gap-3">
+            <Mail className="h-4 w-4 flex-shrink-0" />
+            <span className="font-semibold text-foreground">{profile.email}</span>
+          </div>
+        )}
       </div>
     </aside>
   );
