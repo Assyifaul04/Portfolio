@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MessageCircle, Send, Download, FileText } from "lucide-react";
+import { MessageCircle, Send, Download, FileText, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface ProjectData {
@@ -29,6 +29,7 @@ interface Message {
   sender: "user" | "bot";
   timestamp: Date;
   projects?: ProjectData[];
+  isTyping?: boolean;
 }
 
 // Helper function untuk warna language
@@ -77,20 +78,36 @@ const languageColor = (lang?: string): string => {
   }
 };
 
+// Typing Animation Component
+const TypingText = ({ text, onComplete }: { text: string; onComplete: () => void }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, 30);
+      return () => clearTimeout(timeout);
+    } else {
+      onComplete();
+    }
+  }, [currentIndex, text, onComplete]);
+
+  return <span>{displayedText}</span>;
+};
+
 export default function Chatbox() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Halo! Ada yang bisa saya bantu?",
-      sender: "bot",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imagePopoverOpen, setImagePopoverOpen] = useState<string | null>(null);
   const [clickCount, setClickCount] = useState<Record<string, number>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -101,6 +118,31 @@ export default function Chatbox() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initial welcome animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMessages([
+        {
+          id: "welcome",
+          text: "Halo! Selamat datang di chat support kami. Ada yang bisa saya bantu? 😊",
+          sender: "bot",
+          timestamp: new Date(),
+          isTyping: true,
+        },
+      ]);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleTypingComplete = (messageId: string) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, isTyping: false } : msg
+      )
+    );
+  };
 
   const handleProjectClick = (projectId: string) => {
     const currentCount = clickCount[projectId] || 0;
@@ -132,6 +174,11 @@ export default function Chatbox() {
     setInputValue("");
     setIsLoading(true);
 
+    // Blur input to hide keyboard on mobile
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -147,6 +194,7 @@ export default function Chatbox() {
         sender: "bot",
         timestamp: new Date(),
         projects: data.projects || [],
+        isTyping: true,
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -156,6 +204,7 @@ export default function Chatbox() {
         text: "Terjadi kesalahan saat menghubungi server.",
         sender: "bot",
         timestamp: new Date(),
+        isTyping: true,
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -170,28 +219,30 @@ export default function Chatbox() {
   };
 
   return (
-    <div className="flex flex-col h-[500px] w-full bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+    <div className="flex flex-col h-[500px] w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Header with gradient */}
+      <div className="relative flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-slate-100 flex items-center justify-center">
+          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-100 dark:to-slate-300 flex items-center justify-center shadow-md">
             <MessageCircle className="w-5 h-5 text-white dark:text-slate-900" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               Chat Support
+              <Sparkles className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Online - Biasanya membalas dalam beberapa menit
+              Online - Siap membantu Anda
             </p>
           </div>
         </div>
       </div>
 
-      {/* Messages Area */}
+      {/* Messages Area with gradient background */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-4"
+        className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-slate-50/50 to-white dark:from-slate-900/50 dark:to-slate-900"
         style={{ scrollBehavior: "smooth" }}
       >
         <div className="space-y-4">
@@ -200,24 +251,33 @@ export default function Chatbox() {
               key={message.id}
               className={`flex ${
                 message.sender === "user" ? "justify-end" : "justify-start"
-              }`}
+              } animate-in fade-in slide-in-from-bottom-2 duration-300`}
             >
               <div
-                className={`max-w-[85%] rounded-lg px-4 py-2 ${
+                className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
                   message.sender === "user"
-                    ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    ? "bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-100 dark:to-slate-200 text-white dark:text-slate-900"
+                    : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {message.isTyping ? (
+                    <TypingText
+                      text={message.text}
+                      onComplete={() => handleTypingComplete(message.id)}
+                    />
+                  ) : (
+                    message.text
+                  )}
+                </p>
 
                 {/* Project Cards */}
-                {message.projects && message.projects.length > 0 && (
+                {!message.isTyping && message.projects && message.projects.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {message.projects.map((project) => (
                       <Card
                         key={project.id}
-                        className="flex flex-col border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-colors bg-white dark:bg-slate-900"
+                        className="flex flex-col border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-200 bg-white dark:bg-slate-900 hover:shadow-md"
                       >
                         <div className="p-3 space-y-2">
                           {/* Title with Icon */}
@@ -233,7 +293,7 @@ export default function Chatbox() {
                                 >
                                   <PopoverTrigger asChild>
                                     <span
-                                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm transition-colors"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         handleProjectClick(project.id);
@@ -258,7 +318,7 @@ export default function Chatbox() {
                                   href={`/projects/${project.id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm"
+                                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate cursor-pointer text-sm transition-colors"
                                 >
                                   {project.title}
                                 </a>
@@ -300,7 +360,7 @@ export default function Chatbox() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 px-2 text-slate-500 hover:text-slate-700 text-xs"
+                                className="h-7 px-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs transition-colors"
                                 onClick={() =>
                                   window.open(
                                     `/projects/${project.id}`,
@@ -321,7 +381,7 @@ export default function Chatbox() {
                 )}
 
                 <p
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-2 ${
                     message.sender === "user"
                       ? "text-slate-300 dark:text-slate-600"
                       : "text-slate-500 dark:text-slate-400"
@@ -338,8 +398,8 @@ export default function Chatbox() {
 
           {/* Loading indicator */}
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-slate-100 dark:bg-slate-800 rounded-lg px-4 py-2">
+            <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 shadow-sm">
                 <div className="flex gap-1">
                   <div
                     className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
@@ -360,22 +420,27 @@ export default function Chatbox() {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
+      {/* Input Area with improved styling */}
+      <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ketik pesan..."
             disabled={isLoading}
-            className="flex-1 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+            className="flex-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600 rounded-xl shadow-sm transition-all"
+            inputMode="none"
+            onFocus={(e) => {
+              e.target.removeAttribute('inputMode');
+            }}
           />
           <Button
             onClick={handleSendMessage}
             size="icon"
             disabled={isLoading}
-            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 disabled:opacity-50"
+            className="bg-gradient-to-br from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 dark:from-slate-100 dark:to-slate-200 dark:hover:from-slate-200 dark:hover:to-slate-300 disabled:opacity-50 rounded-xl shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <Send className="h-4 w-4 text-white dark:text-slate-900" />
           </Button>
